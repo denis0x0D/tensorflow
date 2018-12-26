@@ -38,6 +38,51 @@ namespace {
 
 class HloSchedulingTest : public HloTestBase {};
 
+static void Print(const std::vector<HloInstruction*>& sequence) {
+  for (auto it = sequence.begin(); it != sequence.end(); ++it) {
+    std::cout << (*it)->ToString() << std::endl;
+  }
+}
+
+TEST_F(HloSchedulingTest, SimpleExample) {
+  // %B = f32[10,10]{1,0} parameter(2)
+  // %A = f32[10,10]{1,0} parameter(1)
+  // %x = f32[10]{0} parameter(0)
+  // %broadcast = f32[10,10]{1,0} broadcast(f32[10]{0} %x), dimensions={0}
+  // %add = f32[10,10]{1,0} add(f32[10,10]{1,0} %B, f32[10,10]{1,0} %broadcast)
+  // %multiply = f32[10,10]{1,0} multiply(f32[10,10]{1,0} %A, f32[10,10]{1,0} %broadcast)
+  // %subtract = f32[10,10]{1,0} subtract(f32[10,10]{1,0} %add, f32[10,10]{1,0} %multiply)
+  const Shape matrix = ShapeUtil::MakeShape(xla::F32, {10, 10});
+  const Shape vector = ShapeUtil::MakeShape(xla::F32, {10});
+  auto builder = HloComputation::Builder(TestName());
+  auto x = builder.AddInstruction(
+      HloInstruction::CreateParameter(0, vector, "x"));
+  auto A =
+      builder.AddInstruction(HloInstruction::CreateParameter(1, matrix, "A"));
+  auto B =
+      builder.AddInstruction(HloInstruction::CreateParameter(2, matrix, "B"));
+  x = builder.AddInstruction(HloInstruction::CreateBroadcast(matrix, x, {0}));
+  auto mul = builder.AddInstruction(
+      HloInstruction::CreateBinary(matrix, HloOpcode::kMultiply, A, x));
+  auto add = builder.AddInstruction(
+      HloInstruction::CreateBinary(matrix, HloOpcode::kAdd, B, x));
+  auto sub = builder.AddInstruction(
+      HloInstruction::CreateBinary(matrix, HloOpcode::kSubtract, add, mul));
+
+  auto module = CreateNewVerifiedModule();
+
+  module->AddEntryComputation(builder.Build());
+
+  HloMemoryScheduler scheduler([](const BufferValue& buffer) {
+    return ShapeUtil::ByteSizeOf(buffer.shape());
+  });
+
+  scheduler.Run(module.get());
+  const std::vector<HloInstruction*>& sequence =
+      module->schedule().sequence(module->entry_computation()).instructions();
+  Print(sequence);
+}
+
 TEST_F(HloSchedulingTest, LastUseScheduledFirst) {
   // Tests scheduling of the following HLO code:
   //
