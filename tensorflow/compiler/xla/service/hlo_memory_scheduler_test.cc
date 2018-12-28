@@ -73,9 +73,46 @@ TEST_F(HloSchedulingTest, SimpleExample) {
 
   module->AddEntryComputation(builder.Build());
 
-  HloMemoryScheduler scheduler([](const BufferValue& buffer) {
+  auto fn_size = [](const BufferValue& buffer) {
     return ShapeUtil::ByteSizeOf(buffer.shape());
-  });
+  };
+
+  HloMemoryScheduler scheduler(fn_size, ListMemoryScheduler);
+
+  scheduler.Run(module.get());
+  const std::vector<HloInstruction*>& sequence =
+      module->schedule().sequence(module->entry_computation()).instructions();
+  Print(sequence);
+}
+
+TEST_F(HloSchedulingTest, Greedy) {
+  // Types.
+  const Shape vector = ShapeUtil::MakeShape(xla::F32, {10});
+  const Shape matrix = ShapeUtil::MakeShape(xla::F32, {10, 10});
+
+  // Create instructions.
+  auto builder = HloComputation::Builder(TestName());
+  auto x =
+      builder.AddInstruction(HloInstruction::CreateParameter(0, vector, "x"));
+
+  auto abs = builder.AddInstruction(
+      HloInstruction::CreateUnary(vector, HloOpcode::kAbs, x));
+  auto exp = builder.AddInstruction(
+      HloInstruction::CreateUnary(vector, HloOpcode::kExp, x));
+  auto cos = builder.AddInstruction(
+      HloInstruction::CreateUnary(vector, HloOpcode::kCos, x));
+
+  auto x1 =
+      builder.AddInstruction(HloInstruction::CreateBroadcast(matrix, abs, {0}));
+
+  auto module = CreateNewVerifiedModule();
+  module->AddEntryComputation(builder.Build());
+  auto fn_size = [](const BufferValue& buffer) {
+    return ShapeUtil::ByteSizeOf(buffer.shape());
+  };
+  
+  // Use greedy.
+  HloMemoryScheduler scheduler(fn_size, ListMemoryScheduler);
 
   scheduler.Run(module.get());
   const std::vector<HloInstruction*>& sequence =
