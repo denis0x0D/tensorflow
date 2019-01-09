@@ -250,5 +250,6 @@ tf_cc_test(
         "//tensorflow/compiler/xla/service:hlo",
         "//tensorflow/compiler/xla/service:hlo_matchers",
         "//tensorflow/core:test",
+        "//tensorflow/compiler/xla/service:hlo_memory_scheduler"
     ],
 )

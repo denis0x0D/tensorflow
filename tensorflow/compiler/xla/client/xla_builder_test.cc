@@ -481,5 +481,13 @@ TEST_F(XlaBuilderTest, CheckInputOutputAlias) {
   EXPECT_EQ(*alias_p1, ShapeIndex({0}));
 }
 
+TEST_F(XlaBuilderTest, CheckCollapse) {
+  XlaBuilder b(TestName());
+  auto X = Parameter(&b, 0, ShapeUtil::MakeShape(F32, {16, 8, 4}), "x");
+  auto A = Collapse(X, {0, 1, 2});
+  TF_ASSERT_OK_AND_ASSIGN(auto module, BuildHloModule(&b));
+  auto root = module->entry_computation()->root_instruction();
+  EXPECT_EQ(root->opcode(), HloOpcode::kReshape);
+}
 }  // namespace
 }  // namespace xla

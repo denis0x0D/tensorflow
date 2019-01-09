@@ -44,81 +44,6 @@ static void Print(const std::vector<HloInstruction*>& sequence) {
   }
 }
 
-TEST_F(HloSchedulingTest, SimpleExample) {
-  // %B = f32[10,10]{1,0} parameter(2)
-  // %A = f32[10,10]{1,0} parameter(1)
-  // %x = f32[10]{0} parameter(0)
-  // %broadcast = f32[10,10]{1,0} broadcast(f32[10]{0} %x), dimensions={0}
-  // %add = f32[10,10]{1,0} add(f32[10,10]{1,0} %B, f32[10,10]{1,0} %broadcast)
-  // %multiply = f32[10,10]{1,0} multiply(f32[10,10]{1,0} %A, f32[10,10]{1,0} %broadcast)
-  // %subtract = f32[10,10]{1,0} subtract(f32[10,10]{1,0} %add, f32[10,10]{1,0} %multiply)
-  const Shape matrix = ShapeUtil::MakeShape(xla::F32, {10, 10});
-  const Shape vector = ShapeUtil::MakeShape(xla::F32, {10});
-  auto builder = HloComputation::Builder(TestName());
-  auto x = builder.AddInstruction(
-      HloInstruction::CreateParameter(0, vector, "x"));
-  auto A =
-      builder.AddInstruction(HloInstruction::CreateParameter(1, matrix, "A"));
-  auto B =
-      builder.AddInstruction(HloInstruction::CreateParameter(2, matrix, "B"));
-  x = builder.AddInstruction(HloInstruction::CreateBroadcast(matrix, x, {0}));
-  auto mul = builder.AddInstruction(
-      HloInstruction::CreateBinary(matrix, HloOpcode::kMultiply, A, x));
-  auto add = builder.AddInstruction(
-      HloInstruction::CreateBinary(matrix, HloOpcode::kAdd, B, x));
-  auto sub = builder.AddInstruction(
-      HloInstruction::CreateBinary(matrix, HloOpcode::kSubtract, add, mul));
-
-  auto module = CreateNewVerifiedModule();
-
-  module->AddEntryComputation(builder.Build());
-
-  auto fn_size = [](const BufferValue& buffer) {
-    return ShapeUtil::ByteSizeOf(buffer.shape());
-  };
-
-  HloMemoryScheduler scheduler(fn_size, ListMemoryScheduler);
-
-  scheduler.Run(module.get());
-  const std::vector<HloInstruction*>& sequence =
-      module->schedule().sequence(module->entry_computation()).instructions();
-  Print(sequence);
-}
-
-TEST_F(HloSchedulingTest, Greedy) {
-  // Types.
-  const Shape vector = ShapeUtil::MakeShape(xla::F32, {10});
-  const Shape matrix = ShapeUtil::MakeShape(xla::F32, {10, 10});
-
-  // Create instructions.
-  auto builder = HloComputation::Builder(TestName());
-  auto x =
-      builder.AddInstruction(HloInstruction::CreateParameter(0, vector, "x"));
-
-  auto abs = builder.AddInstruction(
-      HloInstruction::CreateUnary(vector, HloOpcode::kAbs, x));
-  auto exp = builder.AddInstruction(
-      HloInstruction::CreateUnary(vector, HloOpcode::kExp, x));
-  auto cos = builder.AddInstruction(
-      HloInstruction::CreateUnary(vector, HloOpcode::kCos, x));
-
-  auto x1 =
-      builder.AddInstruction(HloInstruction::CreateBroadcast(matrix, abs, {0}));
-
-  auto module = CreateNewVerifiedModule();
-  module->AddEntryComputation(builder.Build());
-  auto fn_size = [](const BufferValue& buffer) {
-    return ShapeUtil::ByteSizeOf(buffer.shape());
-  };
-  
-  // Use greedy.
-  HloMemoryScheduler scheduler(fn_size, ListMemoryScheduler);
-
-  scheduler.Run(module.get());
-  const std::vector<HloInstruction*>& sequence =
-      module->schedule().sequence(module->entry_computation()).instructions();
-  Print(sequence);
-}
 
 TEST_F(HloSchedulingTest, LastUseScheduledFirst) {
   // Tests scheduling of the following HLO code:
@@ -427,5 +352,118 @@ ENTRY main {
   TF_ASSERT_OK(clone->schedule().Verify());
 }
 
+TEST_F(HloSchedulingTest, SimpleExample) {
+  // %B = f32[10,10]{1,0} parameter(2)
+  // %A = f32[10,10]{1,0} parameter(1)
+  // %x = f32[10]{0} parameter(0)
+  // %broadcast = f32[10,10]{1,0} broadcast(f32[10]{0} %x), dimensions={0}
+  // %add = f32[10,10]{1,0} add(f32[10,10]{1,0} %B, f32[10,10]{1,0} %broadcast)
+  // %multiply = f32[10,10]{1,0} multiply(f32[10,10]{1,0} %A, f32[10,10]{1,0} %broadcast)
+  // %subtract = f32[10,10]{1,0} subtract(f32[10,10]{1,0} %add, f32[10,10]{1,0} %multiply)
+  const Shape matrix = ShapeUtil::MakeShape(xla::F32, {10, 10});
+  const Shape vector = ShapeUtil::MakeShape(xla::F32, {10});
+  auto builder = HloComputation::Builder(TestName());
+  auto x = builder.AddInstruction(
+      HloInstruction::CreateParameter(0, vector, "x"));
+  auto A =
+      builder.AddInstruction(HloInstruction::CreateParameter(1, matrix, "A"));
+  auto B =
+      builder.AddInstruction(HloInstruction::CreateParameter(2, matrix, "B"));
+  x = builder.AddInstruction(HloInstruction::CreateBroadcast(matrix, x, {0}));
+  auto mul = builder.AddInstruction(
+      HloInstruction::CreateBinary(matrix, HloOpcode::kMultiply, A, x));
+  auto add = builder.AddInstruction(
+      HloInstruction::CreateBinary(matrix, HloOpcode::kAdd, B, x));
+  auto sub = builder.AddInstruction(
+      HloInstruction::CreateBinary(matrix, HloOpcode::kSubtract, add, mul));
+
+  auto module = CreateNewVerifiedModule();
+
+  module->AddEntryComputation(builder.Build());
+
+  auto fn_size = [](const BufferValue& buffer) {
+    return ShapeUtil::ByteSizeOf(buffer.shape());
+  };
+
+  HloMemoryScheduler scheduler(fn_size, ListMemoryScheduler);
+
+  scheduler.Run(module.get());
+  const std::vector<HloInstruction*>& sequence =
+      module->schedule().sequence(module->entry_computation()).instructions();
+  //Print(sequence);
+}
+
+HloComputation::Builder CreateHloBuilder() {
+  // Types.
+  const Shape vector = ShapeUtil::MakeShape(xla::F32, {10});
+  const Shape matrix2d = ShapeUtil::MakeShape(xla::F32, {10, 10});
+  const Shape matrix3d = ShapeUtil::MakeShape(xla::F32, {10, 10, 10});
+
+  auto builder = HloComputation::Builder("test");
+  auto x =
+      builder.AddInstruction(HloInstruction::CreateParameter(0, matrix2d, "x"));
+  auto y =
+      builder.AddInstruction(HloInstruction::CreateParameter(1, vector, "y"));
+
+  auto abs = builder.AddInstruction(
+      HloInstruction::CreateUnary(matrix2d, HloOpcode::kAbs, x));
+  auto exp = builder.AddInstruction(
+      HloInstruction::CreateUnary(matrix2d, HloOpcode::kExp, x));
+  auto cos = builder.AddInstruction(
+      HloInstruction::CreateUnary(matrix2d, HloOpcode::kCos, x));
+  auto x1 = builder.AddInstruction(
+      HloInstruction::CreateBroadcast(matrix3d, abs, {0, 1}));
+  PrecisionConfig pre_config;
+  pre_config.mutable_operand_precision()->Resize(2, PrecisionConfig::DEFAULT);
+  DotDimensionNumbers dot_dnums;
+  dot_dnums.add_lhs_contracting_dimensions(1);
+  dot_dnums.add_rhs_contracting_dimensions(0);
+  auto x2 = builder.AddInstruction(
+      HloInstruction::CreateDot(vector, exp, y, dot_dnums, pre_config));
+  return builder;
+}
+
+TEST_F(HloSchedulingTest, Greedy) {
+  HloComputation::Builder builder = CreateHloBuilder();
+  // Types.
+  auto module = CreateNewVerifiedModule();
+  module->AddEntryComputation(builder.Build());
+  auto fn_size = [](const BufferValue& buffer) {
+    return ShapeUtil::ByteSizeOf(buffer.shape());
+  };
+  HloMemoryScheduler scheduler(fn_size, ListMemoryScheduler);
+  scheduler.Run(module.get());
+  const std::vector<HloInstruction*>& sequence =
+      module->schedule().sequence(module->entry_computation()).instructions();
+  Print(sequence);
+}
+
+TEST_F(HloSchedulingTest, PostOrder) {
+  HloComputation::Builder builder = CreateHloBuilder();
+  auto module = CreateNewVerifiedModule();
+  module->AddEntryComputation(builder.Build());
+  auto fn_size = [](const BufferValue& buffer) {
+    return ShapeUtil::ByteSizeOf(buffer.shape());
+  };
+  HloMemoryScheduler scheduler(fn_size, PostOrderMemoryScheduler);
+  scheduler.Run(module.get());
+  const std::vector<HloInstruction*>& sequence =
+      module->schedule().sequence(module->entry_computation()).instructions();
+  Print(sequence);
+}
+
+TEST_F(HloSchedulingTest, Default) {
+  HloComputation::Builder builder = CreateHloBuilder();
+  auto module = CreateNewVerifiedModule();
+  module->AddEntryComputation(builder.Build());
+  auto fn_size = [](const BufferValue& buffer) {
+    return ShapeUtil::ByteSizeOf(buffer.shape());
+  };
+  HloMemoryScheduler scheduler(fn_size, DefaultMemoryScheduler);
+  scheduler.Run(module.get());
+  const std::vector<HloInstruction*>& sequence =
+      module->schedule().sequence(module->entry_computation()).instructions();
+  Print(sequence);
+}
 }  // namespace
 }  // namespace xla
