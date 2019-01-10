@@ -44,7 +44,6 @@ static void Print(const std::vector<HloInstruction*>& sequence) {
   }
 }
 
-
 TEST_F(HloSchedulingTest, LastUseScheduledFirst) {
   // Tests scheduling of the following HLO code:
   //
@@ -464,6 +463,73 @@ TEST_F(HloSchedulingTest, Default) {
   const std::vector<HloInstruction*>& sequence =
       module->schedule().sequence(module->entry_computation()).instructions();
   Print(sequence);
+}
+
+TEST_F(HloSchedulingTest, NonOptimal) {
+  const Shape scalar = ShapeUtil::MakeShape(xla::F32, {});
+  const Shape vector = ShapeUtil::MakeShape(xla::F32, {10});
+  const Shape matrix2d = ShapeUtil::MakeShape(xla::F32, {10, 10});
+  const Shape matrix3d = ShapeUtil::MakeShape(xla::F32, {10, 10, 10});
+
+  auto builder = HloComputation::Builder("test");
+  auto x =
+      builder.AddInstruction(HloInstruction::CreateParameter(0, matrix2d, "x"));
+  auto y =
+      builder.AddInstruction(HloInstruction::CreateParameter(1, vector, "y"));
+
+  auto broad_cast = builder.AddInstruction(
+      HloInstruction::CreateBroadcast(matrix3d, x, {0, 1}));
+  auto abs = builder.AddInstruction(
+      HloInstruction::CreateUnary(matrix2d, HloOpcode::kAbs, x));
+  auto exp = builder.AddInstruction(
+      HloInstruction::CreateUnary(matrix2d, HloOpcode::kExp, x));
+
+  auto concat = builder.AddInstruction(HloInstruction::CreateConcatenate(
+      ShapeUtil::MakeShape(xla::F32, {20, 10}), {abs, exp}, 0));
+
+  auto module = CreateNewVerifiedModule();
+
+  auto zero_initializer = builder.AddInstruction(
+      HloInstruction::CreateConstant(LiteralUtil::CreateR0<float>(0.0f)));
+
+  HloComputation *add_comp = nullptr;
+  {
+    HloComputation::Builder builder(TestName() + "add");
+    HloInstruction* x1 = builder.AddInstruction(
+        HloInstruction::CreateParameter(0, scalar, "x1"));
+    HloInstruction* x2 = builder.AddInstruction(
+        HloInstruction::CreateParameter(1, scalar, "x2"));
+    builder.AddInstruction(
+        HloInstruction::CreateBinary(scalar, HloOpcode::kAdd, x1, x2));
+    add_comp = module->AddEmbeddedComputation(builder.Build());
+  }
+
+  auto reduce = builder.AddInstruction(HloInstruction::CreateReduce(
+      matrix2d, broad_cast, zero_initializer, {0}, add_comp));
+
+  auto out_node = builder.AddInstruction(HloInstruction::CreateConcatenate(
+      ShapeUtil::MakeShape(xla::F32, {30, 10}), {reduce, concat}, 0));
+
+  module->AddEntryComputation(builder.Build());
+  auto size_fn = [](const BufferValue& buffer) {
+    return ShapeUtil::ByteSizeOf(buffer.shape());
+  };
+
+  TF_ASSERT_OK_AND_ASSIGN(
+      HloSchedule schedule,
+      ScheduleModule(module.get(), size_fn, PostOrderMemoryScheduler));
+  // Verify that all instructions are in the sequence.
+  auto entry_computation = module->entry_computation();
+  EXPECT_EQ(module->entry_computation()->instruction_count(),
+            schedule.sequence(module->entry_computation()).size());
+  const std::vector<HloInstruction*>& sequence =
+      module->schedule().sequence(module->entry_computation()).instructions();
+  std::unique_ptr<TuplePointsToAnalysis> points_to_analysis =
+      TuplePointsToAnalysis::Run(module.get()).ValueOrDie();
+  EXPECT_EQ(4840, HeapSimulator::MinimumMemoryForComputation(
+                      *entry_computation, schedule.sequence(entry_computation),
+                      *points_to_analysis, size_fn)
+                      .ValueOrDie());
 }
 }  // namespace
 }  // namespace xla
