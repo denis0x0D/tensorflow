@@ -185,6 +185,7 @@ Status RewriteSubgraph(const std::vector<OutputTensor>& arg_source_tensors,
 
 /*static*/ Status EncapsulateXlaComputationsPass::Encapsulate(
     std::unique_ptr<Graph>* graph, FunctionLibraryDefinition* flib_def) {
+  LOG(INFO) << "EncapsulateXlaComputationPass::Encapsulate ";
   // Check for undeclared outputs before Encapsulation, so we can give a better
   // error message.
   // TODO(phawkins): merge this with the encapsulation code to avoid the extra
@@ -347,6 +348,8 @@ Status RewriteSubgraph(const std::vector<OutputTensor>& arg_source_tensors,
 
 Status EncapsulateXlaComputationsPass::Run(
     const GraphOptimizationPassOptions& options) {
+  LOG(INFO) << "EncapsulateXlaComputations()";
+
   VLOG(1) << "EncapsulateXlaComputations(): "
           << dump_graph::DumpGraphToFile("encapsulate_xla_computations_before",
                                          **options.graph, options.flib_def);

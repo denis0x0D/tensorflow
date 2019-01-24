@@ -33,7 +33,9 @@ namespace tensorflow {
 // vanilla TensorFlow op as long as the bridge supports it.
 class XlaCompileOnDemandOp : public OpKernel {
  public:
-  explicit XlaCompileOnDemandOp(OpKernelConstruction* ctx) : OpKernel(ctx) {}
+  explicit XlaCompileOnDemandOp(OpKernelConstruction* ctx) : OpKernel(ctx) {
+    std::cout << "XLA Compile on demand " << std::endl;
+  }
   void Compute(OpKernelContext* ctx) override;
 
  private:

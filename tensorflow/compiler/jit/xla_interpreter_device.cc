@@ -42,6 +42,7 @@ Status XlaInterpreterDeviceFactory::CreateDevices(
   static XlaDeviceOpRegistrations* registrations = RegisterXlaDeviceKernels(
       DEVICE_XLA_INTERPRETER, DEVICE_INTERPRETER_XLA_JIT);
   (void)registrations;
+  std::cout << "XlaInterpreterDeviceFactory::CreateDevices" << std::endl;
 
   XlaOpRegistry::DeviceRegistration registration;
   registration.compilation_device_name = DEVICE_INTERPRETER_XLA_JIT;

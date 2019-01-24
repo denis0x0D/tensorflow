@@ -115,6 +115,7 @@ Status XlaCompileOnDemandOp::Compile(
     const XlaCompiler::CompilationResult** result,
     xla::LocalExecutable** executable) {
   std::map<int, Tensor> constant_arguments;
+  LOG(INFO) << "XlaCompileOnDemandOp::Compile()";
   for (int64 i = 0; i < ctx->num_inputs(); ++i) {
     const Tensor& device_tensor = ctx->input(i);
     if (const XlaTensor* xla_tensor = XlaTensor::FromTensor(&device_tensor)) {
@@ -209,6 +210,7 @@ Status XlaCompileOnDemandOp::Compile(
 }
 
 void XlaCompileOnDemandOp::Compute(OpKernelContext* ctx) {
+  LOG(INFO) << "XlaCompileOnDemand::Compute() ";
   const XlaCompiler::CompilationResult* result;
   xla::LocalExecutable* executable;
   const XlaDevice::Metadata* metadata;

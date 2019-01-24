@@ -37,6 +37,7 @@ class XlaCpuDeviceFactory : public DeviceFactory {
 Status XlaCpuDeviceFactory::CreateDevices(
     const SessionOptions& session_options, const string& name_prefix,
     std::vector<std::unique_ptr<Device>>* devices) {
+  LOG(INFO) << "XlaCpuDeviceFactory::CreateDevices " << name_prefix;
   XlaDeviceFlags* flags = GetXlaDeviceFlags();
   bool compile_on_demand = flags->tf_xla_compile_on_demand;
 
@@ -63,6 +64,7 @@ Status XlaCpuDeviceFactory::CreateDevices(
   options.device_ordinal = 0;
   options.compilation_device_name = DEVICE_CPU_XLA_JIT;
   options.use_multiple_streams = false;
+  LOG(INFO) << "Create XlaDevice CPU JIT ";
   auto device = absl::make_unique<XlaDevice>(session_options, options);
 
   // Setting GpuDeviceInfo because eager runtime relies on the device

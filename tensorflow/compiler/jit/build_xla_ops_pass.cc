@@ -304,6 +304,7 @@ Status ReplaceNodeWithXlaCompileAndXlaRun(
 }  // namespace
 
 Status BuildXlaOpsPass::Run(const GraphOptimizationPassOptions& options) {
+  LOG(INFO) << "BuildXlaOpsPass::Run ";
   Graph* graph = options.graph->get();
 
   // Copy out the nodes we want to rewrite to avoid modifying the graph while we

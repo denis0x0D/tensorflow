@@ -89,6 +89,7 @@ ClientLibrary::~ClientLibrary() = default;
 
 /* static */ StatusOr<LocalClient*> ClientLibrary::GetOrCreateLocalClient(
     const LocalClientOptions& options) {
+  LOG(INFO) << "ClientLibrary::GetOrCreateLocalClient ";
   se::Platform* platform = options.platform();
   int replica_count = options.number_of_replicas();
   ClientLibrary& client_library = Singleton();

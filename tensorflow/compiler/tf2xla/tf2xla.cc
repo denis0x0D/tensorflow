@@ -254,6 +254,7 @@ Status CreateXlaArgs(const Graph& graph,
 // graph symbolically, with each op building up the XLA HLO.
 Status ConvertGraphToXla(std::unique_ptr<Graph> graph, xla::Client* client,
                          xla::XlaComputation* computation) {
+  std::cout << "Convert graph to xla " << std::endl;
   XlaOpRegistry::RegisterCompilationKernels();
   for (Node* node : graph->nodes()) {
     node->set_assigned_device_name(

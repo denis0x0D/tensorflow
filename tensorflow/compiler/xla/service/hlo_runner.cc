@@ -45,6 +45,7 @@ namespace {
 // Creates an HloModule from the given proto.
 StatusOr<std::unique_ptr<HloModule>> HloProtoToModule(
     const HloProto& proto, const DebugOptions& debug_options) {
+  LOG(INFO) << "HloProtoModule, Create module from proto ";
   TF_ASSIGN_OR_RETURN(HloModuleConfig config,
                       HloModule::CreateModuleConfigFromProto(proto.hlo_module(),
                                                              debug_options));
@@ -173,6 +174,7 @@ StatusOr<ScopedShapedBuffer> HloRunner::ExecuteWithDeviceBuffers(
     const absl::Span<const ShapedBuffer* const> arguments, bool run_hlo_passes,
     ExecutionProfile* profile) {
   // Get service run options.
+  LOG(INFO) << "HloRunner::ExecuteWithDeviceBuffer ";
   se::Stream stream(backend().default_stream_executor());
   stream.Init();
   ServiceExecutableRunOptions service_run_options =
@@ -358,6 +360,8 @@ StatusOr<std::vector<Literal>> HloRunner::ExecuteReplicated(
 
 StatusOr<std::unique_ptr<Executable>> HloRunner::CreateExecutable(
     std::unique_ptr<HloModule> module, bool run_hlo_passes) {
+  LOG(INFO) << "HloRunner::CreateExecutable "
+            << "run hlo passes " << run_hlo_passes;
   if (run_hlo_passes) {
     auto module_group = absl::make_unique<HloModuleGroup>(std::move(module));
     TF_ASSIGN_OR_RETURN(

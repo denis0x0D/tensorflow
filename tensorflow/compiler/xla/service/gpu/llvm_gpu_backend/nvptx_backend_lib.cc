@@ -252,6 +252,7 @@ void EmitBitcodeToFile(const Module& module, absl::string_view filename) {
 string EmitModuleToPTX(Module* module, llvm::TargetMachine* target_machine) {
   std::string ptx;  // need a std::string instead of a ::string.
   {
+    LOG(INFO) << "EmitModuleToPtx ";
     llvm::raw_string_ostream stream(ptx);
     llvm::buffer_ostream pstream(stream);
     // The extension is stripped by IrDumpingPassManager, so we need to

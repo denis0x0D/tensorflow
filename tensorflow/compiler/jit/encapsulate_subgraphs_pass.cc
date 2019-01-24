@@ -2514,6 +2514,8 @@ static Status RenumberArguments(Graph* graph,
 Status EncapsulateSubgraphsPass::Run(
     const GraphOptimizationPassOptions& options) {
   VLOG(1) << "EncapsulateSubgraphsPass::Run";
+  LOG(INFO) << "EncapsulateSubgraphsPass::Run ";
+
   if (VLOG_IS_ON(1)) {
     dump_graph::DumpGraphToFile("encapsulate_subgraphs_before", **options.graph,
                                 options.flib_def);
@@ -2597,7 +2599,8 @@ Status EncapsulateSubgraphsPass::Run(
           rewrite_subgraph, /*reuse_existing_functions=*/false, &graph_out,
           library),
       "EncapsulateSubgraphsPass failed");
-
+  dump_graph::DumpGraphToFile("encapsulate_subgraphs_after", *graph_out,
+                              options.flib_def);
   if (VLOG_IS_ON(1)) {
     dump_graph::DumpGraphToFile("encapsulate_subgraphs_after", *graph_out,
                                 options.flib_def);

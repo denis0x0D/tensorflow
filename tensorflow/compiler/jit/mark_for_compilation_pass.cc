@@ -666,6 +666,7 @@ bool IsCompilable(FunctionLibraryRuntime* flr, const NodeDef& ndef) {
 
 Status MarkForCompilationPass::Run(
     const GraphOptimizationPassOptions& options) {
+  LOG(INFO) << "Xla MarkFor Compilation Pass ";
   // TODO(phawkins): precompute the "GetCompilationDevice" properties of each
   // device ahead of time.
   OptimizerOptions::GlobalJitLevel global_jit_level =

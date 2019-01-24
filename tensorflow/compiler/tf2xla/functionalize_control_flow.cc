@@ -232,6 +232,7 @@ Status FunctionalizeControlFlowForFunction(
 
 Status FunctionalizeControlFlowPass::Run(
     const GraphOptimizationPassOptions& options) {
+  LOG(INFO) << "FunctionalizeControlFlowPass::Run ";
   Graph* graph = options.graph->get();
   if (VLOG_IS_ON(4)) {
     dump_graph::DumpGraphToFile("functionalize_control_flow_before", *graph,

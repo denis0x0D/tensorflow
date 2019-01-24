@@ -110,6 +110,7 @@ Status DeviceFactory::AddDevices(
   for (auto& p : device_factories()) {
     auto factory = p.second.factory.get();
     if (factory != cpu_factory) {
+      LOG(INFO) << "DeviceFactory::AddGpuDevice " << name_prefix;
       TF_RETURN_IF_ERROR(factory->CreateDevices(options, name_prefix, devices));
     }
   }

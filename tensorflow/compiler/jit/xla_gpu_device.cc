@@ -63,6 +63,7 @@ Status XlaGpuDeviceFactory::CreateDevices(
     const SessionOptions& session_options, const string& name_prefix,
     std::vector<std::unique_ptr<Device>>* devices) {
   XlaOpRegistry::DeviceRegistration registration;
+  LOG(INFO) << "XlaGpuDeviceFactory::CreateDevices";
   registration.compilation_device_name = DEVICE_GPU_XLA_JIT;
   registration.autoclustering_policy =
       XlaOpRegistry::AutoclusteringPolicy::kAlways;
@@ -99,6 +100,7 @@ Status XlaGpuDeviceFactory::CreateDevices(
     options.compilation_device_name = DEVICE_GPU_XLA_JIT;
     options.use_multiple_streams = true;
     options.allowed_devices = gpu_ids;
+    LOG(INFO) << "Crete device with options ";
     auto device = absl::make_unique<XlaDevice>(session_options, options);
 
     Status status = device->UseGpuDeviceInfo();

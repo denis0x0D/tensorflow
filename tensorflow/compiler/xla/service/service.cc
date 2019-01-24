@@ -132,6 +132,7 @@ const absl::optional<std::set<int>>& ServiceOptions::allowed_devices() const {
 
 /* static */ StatusOr<std::unique_ptr<Service>> Service::NewService(
     const ServiceOptions& options) {
+  LOG(INFO) << "XLA Service create new service ";
   se::Platform* platform = options.platform();
   std::unique_ptr<Backend> execute_backend;
   if (platform == nullptr) {
@@ -153,6 +154,7 @@ Service::Service(const ServiceOptions& options,
       allocation_tracker_(execute_backend.get()),
       execute_backend_(std::move(execute_backend)) {
   CHECK_GT(options_.number_of_replicas(), 0);
+  LOG(INFO) << "Create Service ";
   if (execute_backend_) {
     if (execute_backend_->device_count() > 0) {
       CHECK_GE(execute_backend_->device_count(), options_.number_of_replicas())

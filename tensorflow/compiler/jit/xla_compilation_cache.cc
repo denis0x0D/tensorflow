@@ -142,6 +142,7 @@ Status XlaCompilationCache::BuildExecutable(
     const XlaCompiler::CompilationResult& result,
     std::unique_ptr<xla::LocalExecutable>* executable) {
   VLOG(2) << "Compiling to local executable";
+  LOG(INFO) << "XLA BuildExecutable ";
 
   std::vector<const xla::Shape*> argument_layouts(
       result.xla_input_shapes.size());
@@ -201,6 +202,7 @@ Status XlaCompilationCache::CompileSingleOp(
     const XlaCompiler::CompileOptions& compile_options,
     const XlaCompiler::CompilationResult** out_compilation_result,
     xla::LocalExecutable** out_executable) {
+  LOG(INFO) << "XlaCompilationCache::CompileSingleOp()";
   const NodeDef& def = ctx->op_kernel().def();
   NameAttrList name;
   name.set_name(def.op());
@@ -328,6 +330,7 @@ Status XlaCompilationCache::CompileImpl(
     const uint64 compile_start_us = env->NowMicros();
     // Do the actual JIT compilation without holding the lock (it can take
     // a long time.)
+    // Compilatoin happens here.
 
     XlaCompiler compiler(options);
     entry->compiled = true;

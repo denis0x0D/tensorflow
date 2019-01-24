@@ -127,6 +127,7 @@ CUDAExecutor::~CUDAExecutor() {
 port::Status CUDAExecutor::Init(int device_ordinal,
                                 DeviceOptions device_options) {
   device_ordinal_ = device_ordinal;
+  LOG(INFO) << "CUDAExecutor Init ";
 
   auto status = CUDADriver::Init();
   if (!status.ok()) {
@@ -235,6 +236,8 @@ bool CUDAExecutor::LoadModuleFromPtx(const char *ptx, CUmodule *module) {
   if (*module == nullptr) {
     if (!CUDADriver::LoadPtx(context_, ptx, module)) {
       return false;
+    } else {
+      LOG(INFO) << "CUDAExecutro::LoadModuleFromPtx";
     }
     VLOG(3) << "Loaded PTX " << static_cast<const void *>(ptx) << " as module "
             << *module;
@@ -243,6 +246,7 @@ bool CUDAExecutor::LoadModuleFromPtx(const char *ptx, CUmodule *module) {
     ++module_refcount;
     VLOG(3) << "PTX " << static_cast<const void *>(ptx)
             << " is already loaded as module " << module;
+    LOG(INFO) << "PTX is already loaded ";
   }
   gpu_binary_to_module_[ptx] = {*module, module_refcount};
   return true;

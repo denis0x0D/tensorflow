@@ -64,6 +64,7 @@ Session* NewSession(const SessionOptions& options) {
     LOG(ERROR) << "Failed to create session: " << s;
     return nullptr;
   }
+  LOG(INFO) << "Create Session";
   return out_session;
 }
 

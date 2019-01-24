@@ -475,6 +475,7 @@ Status XlaCompiler::CompileFunction(
   const string function_id =
       Canonicalize(function.name(), AttrSlice(&function.attr()));
   VLOG(1) << "XlaCompiler::CompileFunction " << function_id;
+  LOG(INFO) << "XLA Compile Function ";
 
   const std::vector<XlaCompiler::Argument> arg_vector(args.begin(), args.end());
   auto it = cache_.find({function_id, arg_vector});
@@ -906,6 +907,7 @@ Status XlaCompiler::CompileGraph(const XlaCompiler::CompileOptions& options,
                                  absl::Span<const XlaCompiler::Argument> args,
                                  CompilationResult* result) {
   VLOG(1) << "Executing graph symbolically to populate XlaBuilder.";
+  LOG(INFO) << "Executing graph symbolically to populate XlaBuilder.";
 
   TF_RETURN_IF_ERROR(PropagateConstIntoFunctionalNodes(
       graph.get(), options_.flib_def, local_flib_def_.get()));

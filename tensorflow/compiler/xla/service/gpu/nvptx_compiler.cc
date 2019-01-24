@@ -216,6 +216,7 @@ Status OptimizeHloModule(HloModule* hlo_module, se::StreamExecutor* stream_exec,
         TransposeFolding::NeverFoldTranspose);
     pipeline.AddPass<HloCSE>(/*is_layout_sensitive=*/false);
     pipeline.AddPass<HloDCE>();
+    LOG(INFO) << "Run HLO Optimiation " << std::endl;
     TF_RETURN_IF_ERROR(pipeline.Run(hlo_module).status());
   }
 
@@ -358,6 +359,7 @@ Status PrepareHloModuleForIrEmitting(HloModule* hlo_module) {
   // assumed immutable at this point, and should not be reused for output
   // (b/27180329). Therefore, in that case, we set the output to be a copy of
   // the parameter.
+  LOG(INFO) << "Prepare Hlo module for ir emitting ";
   HloPassPipeline pipeline("GPU-ir-emit-prepare");
   /* TODO(b/117531509): Use LayoutAssignment::InstructionCanChangeLayout after
    * fixing the ticket. */
@@ -498,6 +500,7 @@ StatusOr<std::vector<uint8>> CompilePtx(
   tracing::ScopedActivity activity("Compile PTX", /*is_expensive=*/true);
   auto env = tensorflow::Env::Default();
   string ptxas_path;
+  LOG(INFO) << "Compile PTX";
   for (const string& cuda_root : GetCudaRootCandidates(hlo_module_config)) {
     ptxas_path = tensorflow::io::JoinPath(cuda_root, "bin", "ptxas");
     VLOG(2) << "Looking for ptxas at " << ptxas_path;
@@ -521,6 +524,7 @@ StatusOr<std::vector<uint8>> CompilePtx(
 
   TF_RETURN_IF_ERROR(tensorflow::WriteStringToFile(env, ptx_path, ptx));
   VLOG(2) << "ptx written to: " << ptx_path;
+  LOG(INFO) << "ptx written to: " << ptx_path;
 
   // Invoke ptxas and collect its output.
   string cubin_path;
@@ -593,6 +597,7 @@ StatusOr<std::unique_ptr<Executable>> NVPTXCompiler::RunBackend(
     std::unique_ptr<HloModule> module, se::StreamExecutor* stream_exec,
     DeviceMemoryAllocator* device_allocator) {
   XLA_SCOPED_LOGGING_TIMER("NVPTXCompiler::RunBackend");
+  LOG(INFO) << "Run Xla backend";
 
   TF_RET_CHECK(stream_exec != nullptr);
 
@@ -795,6 +800,7 @@ std::vector<uint8> NVPTXCompiler::CompilePtxOrGetCachedResult(
     const string& ptx, int cc_major, int cc_minor,
     const HloModuleConfig& hlo_module_config) {
   XLA_SCOPED_LOGGING_TIMER("NVPTXCompiler::CompilePtxOrGetCachedResult");
+  LOG(INFO) << "CompilePtxOrGetCachedResult ";
   tracing::ScopedActivity activity("PTX->CUBIN", /*is_expensive=*/true);
   bool inserted;
   decltype(compilation_cache_.begin()) iter;

@@ -164,10 +164,15 @@ XlaOpRegistry::~XlaOpRegistry() = default;
 }
 
 void XlaOpRegistry::RegisterCompilationKernels() {
+  LOG(INFO) << "XlaOpRegistry::RegisterCompilationKernels";
   XlaOpRegistry& registry = Instance();
   mutex_lock lock(registry.mutex_);
 
-  if (registry.jit_kernels_registered_) return;
+  if (registry.jit_kernels_registered_) {
+    LOG(INFO)
+        << "XlaOpRegistry::RegisterCompilationKernels - already registered ";
+    return;
+  }
   registry.jit_kernels_registered_ = true;
 
   OpRegistryInterface* op_registry = OpRegistry::Global();
@@ -301,8 +306,8 @@ void XlaOpRegistry::RegisterCompilationKernels() {
             !backend.second.op_filter(kdef.get())) {
           continue;
         }
-        VLOG(2) << "XLA op registration: device: " << backend.first
-                << " op: " << op_name;
+        //LOG(INFO) << "XLA op registration: device: " << backend.first
+         //         << " op: " << op_name;
         registry.kernel_registrars_.emplace_back(
             new kernel_factory::OpKernelRegistrar(
                 new KernelDef(*kdef), "XlaJitOp", op_registration->factory));
@@ -323,6 +328,7 @@ std::vector<const KernelDef*> XlaOpRegistry::DeviceKernels(
   auto it = registry.backends_.find(compilation_device_name);
   CHECK(it != registry.backends_.end())
       << "Unknown backend " << compilation_device_name;
+  LOG(INFO) << "XlaOpRegistry::DeviceKernels()" << compilation_device_name;
   for (const std::unique_ptr<KernelDef>& k : it->second.kernel_defs) {
     auto op_iter = registry.ops_.find(k->op());
     CHECK(op_iter != registry.ops_.end() && !op_iter->second.empty());

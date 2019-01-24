@@ -153,6 +153,7 @@ class DirectSessionFactory : public SessionFactory {
 
   Status NewSession(const SessionOptions& options,
                     Session** out_session) override {
+    LOG(INFO) << "Session Factory - New session ";
     // Must do this before the CPU allocator is created.
     if (options.config.graph_options().build_cost_model() > 0) {
       EnableCPUAllocatorFullStats(true);
@@ -173,6 +174,7 @@ class DirectSessionFactory : public SessionFactory {
 
   Status Reset(const SessionOptions& options,
                const std::vector<string>& containers) override {
+    LOG(INFO) << "Session Factory - Reset Session ";
     std::vector<DirectSession*> sessions_to_reset;
     {
       mutex_lock l(sessions_lock_);
@@ -425,6 +427,7 @@ Status DirectSession::Run(const NamedTensorList& inputs,
                           const std::vector<string>& output_names,
                           const std::vector<string>& target_nodes,
                           std::vector<Tensor>* outputs) {
+  LOG(INFO) << "DirectSession Run ";
   RunMetadata run_metadata;
   return Run(RunOptions(), inputs, output_names, target_nodes, outputs,
              &run_metadata);
@@ -464,6 +467,7 @@ Status DirectSession::RunInternal(int64 step_id, const RunOptions& run_options,
                                   CallFrameInterface* call_frame,
                                   ExecutorsAndKeys* executors_and_keys,
                                   RunMetadata* run_metadata) {
+  LOG(INFO) << "DirectSession::RunInternal ";
   const uint64 start_time_usecs = Env::Default()->NowMicros();
   string session_id_meta = strings::StrCat("SessionRun #id=", step_id, "#");
   tracing::ScopedActivity activity(session_id_meta);
@@ -514,6 +518,7 @@ Status DirectSession::RunInternal(int64 step_id, const RunOptions& run_options,
 
   // Start parallel Executors.
   const size_t num_executors = executors_and_keys->items.size();
+  LOG(INFO) << "Nume execuros " << num_executors;
   ExecutorBarrier* barrier = new ExecutorBarrier(
       num_executors, run_state.rendez, [&run_state](const Status& ret) {
         {
@@ -730,6 +735,7 @@ Status DirectSession::Run(const RunOptions& run_options,
                           const std::vector<string>& target_nodes,
                           std::vector<Tensor>* outputs,
                           RunMetadata* run_metadata) {
+  LOG(INFO) << "DirectSession::Run ";
   TF_RETURN_IF_ERROR(CheckNotClosed());
   TF_RETURN_IF_ERROR(CheckGraphCreated("Run()"));
   direct_session_runs->GetCell()->IncrementBy(1);
@@ -1341,6 +1347,7 @@ Status DirectSession::GetOrCreateExecutors(
     gtl::ArraySlice<string> target_nodes, ExecutorsAndKeys** executors_and_keys,
     RunStateArgs* run_state_args) {
   int64 handle_name_counter_value = -1;
+  //LOG(INFO) << "DirectSession::GetOrCreateExecutros";
   if (LogMemory::IsEnabled() || run_state_args->is_partial_run) {
     handle_name_counter_value = handle_name_counter_.fetch_add(1);
   }

@@ -31,8 +31,8 @@ string DumpGraphDefToFile(const string& name, GraphDef const& graph_def) {
 
 string DumpGraphToFile(const string& name, Graph const& graph,
                        const FunctionLibraryDefinition* flib_def) {
-  return tensorflow::DumpGraphToFile(name, graph, flib_def,
-                                     GetDumpGraphFlags()->tf_dump_graph_prefix);
+  return tensorflow::DumpGraphToFile(name, graph, flib_def, "/tmp");
+  //                          GetDumpGraphFlags()->tf_dump_graph_prefix);
 }
 
 string DumpFunctionDefToFile(const string& name, FunctionDef const& fdef) {

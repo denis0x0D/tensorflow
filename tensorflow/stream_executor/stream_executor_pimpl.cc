@@ -69,6 +69,8 @@ internal::StreamExecutorInterface *StreamExecutorImplementationFromPlatformKind(
   internal::StreamExecutorFactory factory;
   switch (platform_kind) {
     case PlatformKind::kCuda:
+      LOG(INFO) << "StreamExecutorImplementationFromPlatformKidn - "
+                   "StreamExecutor create cuda ";
       factory = *internal::MakeCUDAExecutorImplementation();
       break;
     case PlatformKind::kOpenCL:

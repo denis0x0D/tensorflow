@@ -93,6 +93,7 @@ XlaDeviceAllocatorState::~XlaDeviceAllocatorState() = default;
 
 XlaDeviceAllocator* XlaDeviceAllocatorState::GetOrCreateXlaDeviceAllocator(
     const xla::Backend* backend, int device_ordinal) {
+  LOG(INFO) << "XlaDevieAllocator::GetOrCreateXlaDeviceAllocator";
   XlaDeviceAllocatorState& state = Singleton();
   mutex_lock lock(state.allocator_mutex_);
 
@@ -205,6 +206,7 @@ XlaDevice::XlaDevice(const SessionOptions& session_options,
       allowed_devices_(options.allowed_devices) {
   VLOG(1) << "Created XLA device " << options.compilation_device_name << " "
           << this;
+  LOG(INFO) << "Create XLA device ";
   thread_pool_.reset(new thread::ThreadPool(session_options.env, "xla_device",
                                             /*num_threads=*/1));
 
@@ -235,6 +237,7 @@ xla::LocalClient* XlaDevice::client() const {
 
   // TODO(b/78468222): This can fail, at least when the backend is GPU and
   // there is no GPU on the host.
+  LOG(INFO) << "XlaDevice client() ";
   return xla::ClientLibrary::GetOrCreateLocalClient(platform_, allowed_devices_)
       .ValueOrDie();
 }
@@ -259,6 +262,7 @@ Allocator* XlaDevice::GetAllocatorLocked(AllocatorAttributes attr) {
 
 Status XlaDevice::EnsureDeviceContextOk() {
   mutex_lock lock(mu_);
+  LOG(INFO) << "Ensure DeviceContextOk";
   return GetDeviceContextLocked().status();
 }
 
@@ -278,6 +282,7 @@ Status XlaDevice::EnsureStreamOkLocked(xla::Backend* backend,
 }
 
 xla::StatusOr<XlaDeviceContext*> XlaDevice::GetDeviceContextLocked() {
+  LOG(INFO) << "XlaDevice::GetDeviceContext";
   xla::Backend* backend = client()->mutable_backend();
 
   // Ensure all our streams are valid, borrowing new streams if necessary.
@@ -353,12 +358,14 @@ xla::StatusOr<XlaDeviceContext*> XlaDevice::GetDeviceContextLocked() {
 Status XlaDevice::UseGpuDeviceInfo() {
   mutex_lock lock(mu_);
   use_gpu_device_info_ = true;
+  LOG(INFO) << "Xla UseGpuDeviceInfo ";
   return GetDeviceContextLocked().status();
 }
 
 Status XlaDevice::FillContextMap(const Graph* graph,
                                  DeviceContextMap* device_context_map) {
   VLOG(1) << "XlaDevice::FillContextMap";
+  LOG(INFO) << "Xla FillContext Map ";
   mutex_lock lock(mu_);
   TF_ASSIGN_OR_RETURN(XlaDeviceContext * device_context,
                       GetDeviceContextLocked());
@@ -373,6 +380,7 @@ Status XlaDevice::FillContextMap(const Graph* graph,
 }
 
 void XlaDevice::Compute(OpKernel* op_kernel, OpKernelContext* context) {
+  LOG(INFO) << "XlaDevice compute";
   VLOG(2) << "XlaDevice::Compute " << op_kernel->name() << ":"
           << op_kernel->type_string();
   op_kernel->Compute(context);
@@ -441,6 +449,7 @@ Status XlaDevice::MakeTensorFromProto(const TensorProto& tensor_proto,
                                       const AllocatorAttributes alloc_attrs,
                                       Tensor* tensor) {
   VLOG(1) << "XlaDevice::MakeTensorFromProto";
+  LOG(INFO) << "XLA Make tensor from proto ";
 
   Tensor parsed(tensor_proto.dtype());
   if (!parsed.FromProto(cpu_allocator(), tensor_proto)) {
@@ -528,6 +537,8 @@ XlaDeviceOpRegistrations* RegisterXlaDeviceKernels(const char* device,
   // Any op assigned to the device that isn't rewritten by the graph rewriter
   // gets executed by a n XlaCompileOnDemandOp, which compiles it and executes
   // it just-in-time.
+  LOG(INFO) << "Xla RegisterXlaDeviceKernels - device: " << device
+            << " jit_device: " << jit_device;
   OpKernel* (*factory)(OpKernelConstruction*) =
       [](OpKernelConstruction* context) -> OpKernel* {
     return new XlaCompileOnDemandOp(context);

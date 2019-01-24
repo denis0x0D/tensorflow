@@ -71,6 +71,7 @@ void GenericTransferManager::TransferLiteralFromDevice(
 Status GenericTransferManager::TransferLiteralFromDeviceInternal(
     se::StreamExecutor* executor, const ShapedBuffer& device_buffer,
     MutableBorrowingLiteral literal) {
+  LOG(INFO) << "GenericTransferManager - transfer literal from device ordinal ";
   VLOG(2) << "transferring literal from device ordinal "
           << executor->device_ordinal() << "; device buffer: " << device_buffer;
   TF_RET_CHECK(executor->device_ordinal() == device_buffer.device_ordinal());
