@@ -128,6 +128,7 @@ StatusOr<Literal> TransferManager::TransferArrayFromDevice(
 Status TransferManager::TransferArrayToDevice(
     se::Stream* stream, const LiteralSlice& literal,
     const se::DeviceMemoryBase& dest) {
+  LOG(INFO) << "TransferManager::TransferArrayToDevice";
   // Implement the synchronous version by waiting on the asynchronous version.
   // Use a substream so that if we are called from a HostCallback we don't
   // deadlock.
@@ -141,6 +142,7 @@ Status TransferManager::TransferArrayToDevice(
 Status TransferManager::TransferArrayToDeviceAsync(
     se::Stream* stream, const LiteralSlice& literal,
     const se::DeviceMemoryBase& dest) {
+  LOG(INFO) << "TransferManager::TransferArrayToDeviceAsync";
   const Shape on_device_shape = HostShapeToDeviceShape(literal.shape());
   TF_RET_CHECK(on_device_shape.IsArray())
       << "On-device representation of "
@@ -162,6 +164,7 @@ Status TransferManager::TransferArrayToDeviceAsync(
 void TransferManager::TransferArrayFromDevice(
     se::Stream* stream, const Shape& shape, const se::DeviceMemoryBase& source,
     const MutableBorrowingLiteral& literal, std::function<void(Status)> done) {
+  LOG(INFO) << "TransferManager::TransferArrayFromDevice";
   if (!ShapeUtil::Equal(HostShapeToDeviceShape(shape), shape)) {
     auto error = StrCat("Shape ", ShapeUtil::HumanString(shape),
                         " has a differently shaped representation on-device: ",
@@ -187,6 +190,7 @@ void TransferManager::TransferArrayFromDevice(
     TransferManagerCreationFunction creation_function) {
   tensorflow::mutex_lock lock(
       TransferManager::platform_transfer_manager_mutex_);
+  LOG(INFO) << "RegisterTransferManager ";
   auto* managers = GetPlatformTransferManagers();
   CHECK(managers->find(platform_id) == managers->end());
   (*managers)[platform_id].creation_function = creation_function;

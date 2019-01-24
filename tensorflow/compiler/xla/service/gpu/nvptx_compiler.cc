@@ -216,7 +216,7 @@ Status OptimizeHloModule(HloModule* hlo_module, se::StreamExecutor* stream_exec,
         TransposeFolding::NeverFoldTranspose);
     pipeline.AddPass<HloCSE>(/*is_layout_sensitive=*/false);
     pipeline.AddPass<HloDCE>();
-    LOG(INFO) << "Run HLO Optimiation " << std::endl;
+    LOG(INFO) << "Run HLO Optimization " << std::endl;
     TF_RETURN_IF_ERROR(pipeline.Run(hlo_module).status());
   }
 
@@ -580,6 +580,7 @@ StatusOr<std::unique_ptr<HloModule>> NVPTXCompiler::RunHloPasses(
     DeviceMemoryAllocator* device_allocator) {
   // We dump the post-optimization HLO in RunBackend so no need to dump it here.
   VLOG(3) << "*** HLO Before Optimization";
+  LOG(INFO) << "RunHloPasses";
   XLA_VLOG_LINES(3, module->ToString());
 
   XLA_SCOPED_LOGGING_TIMER("NVPTXCompiler::RunHloPasses");

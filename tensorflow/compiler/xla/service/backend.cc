@@ -84,6 +84,8 @@ struct Backend::EigenThreadPoolWrapper {
 
 /* static */ StatusOr<std::unique_ptr<Backend>> Backend::CreateBackend(
     const BackendOptions& options) {
+  LOG(INFO) << "Backend::CreateBackend with TransferManager and "
+               "ComputationPlacer and StreamExecutor";
   se::Platform* platform = options.platform();
   TF_ASSIGN_OR_RETURN(auto compiler, Compiler::GetForPlatform(platform));
   TF_ASSIGN_OR_RETURN(

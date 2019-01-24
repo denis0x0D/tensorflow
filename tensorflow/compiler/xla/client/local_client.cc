@@ -144,6 +144,7 @@ StatusOr<ScopedShapedBuffer> LocalExecutable::Run(
     ExecutableRunOptions run_options) {
   TF_RETURN_IF_ERROR(
       ValidateExecutionOptions(arguments, run_options, *backend_));
+  LOG(INFO) << "LocalExecutable::Run() ";
 
   StreamPool::Ptr stream;
   if (run_options.stream() == nullptr) {
@@ -245,6 +246,7 @@ StatusOr<std::unique_ptr<LocalExecutable>> LocalClient::Compile(
     const XlaComputation& computation,
     const absl::Span<const Shape* const> argument_layouts,
     const ExecutableBuildOptions& options) {
+  LOG(INFO) << "LocalClient::Compile ";
   ExecutableBuildOptions updated_options = options;
   if (options.device_ordinal() == -1) {
     updated_options.set_device_ordinal(default_device_ordinal());

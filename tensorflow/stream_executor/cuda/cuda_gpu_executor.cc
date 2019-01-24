@@ -231,13 +231,14 @@ bool CUDAExecutor::LoadModuleFromCuBin(const char *cubin, CUmodule *module) {
 
 bool CUDAExecutor::LoadModuleFromPtx(const char *ptx, CUmodule *module) {
   uint64_t module_refcount;
+  LOG(INFO) << "LoadModuleFromPtx ";
   std::tie(*module, module_refcount) = gpu_binary_to_module_[ptx];
 
   if (*module == nullptr) {
     if (!CUDADriver::LoadPtx(context_, ptx, module)) {
       return false;
     } else {
-      LOG(INFO) << "CUDAExecutro::LoadModuleFromPtx";
+      LOG(INFO) << "CUDAExecutor::LoadModuleFromPtx";
     }
     VLOG(3) << "Loaded PTX " << static_cast<const void *>(ptx) << " as module "
             << *module;
@@ -257,6 +258,7 @@ bool CUDAExecutor::GetKernel(const MultiKernelLoaderSpec &spec,
   CUDAKernel *cuda_kernel = AsCUDAKernel(kernel);
   CUmodule module;
   const string *kernelname;
+  LOG(INFO) << "CUDAExecutor::GetKernel ";
 
   VLOG(3) << "GetKernel on kernel " << kernel << " : " << kernel->name();
 
@@ -269,6 +271,7 @@ bool CUDAExecutor::GetKernel(const MultiKernelLoaderSpec &spec,
     }
     kernel_to_gpu_binary_[kernel] = cubin;
   } else if (spec.has_cuda_ptx_in_memory()) {
+    LOG(INFO) << "CUDAExecutor cuda ptx in memory ";
     kernelname = &spec.cuda_ptx_in_memory().kernelname();
 
     if (cc_major_ == 0 && cc_minor_ == 0) {
@@ -410,6 +413,7 @@ bool CUDAExecutor::GetKernelMetadata(CUDAKernel *cuda_kernel,
 bool CUDAExecutor::Launch(Stream *stream, const ThreadDim &thread_dims,
                           const BlockDim &block_dims, const KernelBase &kernel,
                           const KernelArgsArrayBase &args) {
+  LOG(INFO) << "CUDAExecutor::Launch ";
   CHECK_EQ(kernel.Arity(), args.number_of_arguments());
   CUstream custream = AsCUDAStreamValue(stream);
   const CUDAKernel *cuda_kernel = AsCUDAKernel(&kernel);

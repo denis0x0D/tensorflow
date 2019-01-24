@@ -153,6 +153,7 @@ int XlaDevice::Metadata::device_ordinal() const { return device_ordinal_; }
 se::Platform* XlaDevice::Metadata::platform() const { return platform_; }
 
 xla::LocalClient* XlaDevice::Metadata::client() const {
+  LOG(INFO) << "XalDevice::Metdata::client()";
   auto client = xla::ClientLibrary::GetOrCreateLocalClient(platform_);
   return client.ValueOrDie();
 }
@@ -282,7 +283,7 @@ Status XlaDevice::EnsureStreamOkLocked(xla::Backend* backend,
 }
 
 xla::StatusOr<XlaDeviceContext*> XlaDevice::GetDeviceContextLocked() {
-  LOG(INFO) << "XlaDevice::GetDeviceContext";
+  LOG(INFO) << "XlaDevice::GetDeviceContextLocked";
   xla::Backend* backend = client()->mutable_backend();
 
   // Ensure all our streams are valid, borrowing new streams if necessary.
@@ -332,8 +333,8 @@ xla::StatusOr<XlaDeviceContext*> XlaDevice::GetDeviceContextLocked() {
       stream_, std::move(host_to_device_stream),
       std::move(device_to_host_stream), std::move(device_to_device_streams),
       client(), shape_representation_fn_, thread_pool_.get());
-  VLOG(1) << "XlaDevice " << this << " new XlaDeviceContext "
-          << device_context_;
+  LOG(INFO) << "XlaDevice " << this << " new XlaDeviceContext "
+            << device_context_;
 
   // Create and set a new GpuDeviceInfo, if necessary.
   //
@@ -348,8 +349,8 @@ xla::StatusOr<XlaDeviceContext*> XlaDevice::GetDeviceContextLocked() {
     gpu_device_info->default_context = device_context_;
     set_tensorflow_gpu_device_info(gpu_device_info.get());
     gpu_device_info_ = std::move(gpu_device_info);
-    VLOG(1) << "XlaDevice " << this << " new GpuDeviceInfo "
-            << gpu_device_info_.get();
+    LOG(INFO) << "XlaDevice " << this << " new GpuDeviceInfo "
+              << gpu_device_info_.get();
   }
 
   return device_context_;
@@ -388,8 +389,8 @@ void XlaDevice::Compute(OpKernel* op_kernel, OpKernelContext* context) {
 
 void XlaDevice::ComputeAsync(AsyncOpKernel* op_kernel, OpKernelContext* context,
                              AsyncOpKernel::DoneCallback done) {
-  VLOG(2) << "XlaDevice::ComputeAsync " << op_kernel->name() << ":"
-          << op_kernel->type_string();
+  LOG(INFO) << "XlaDevice::ComputeAsync " << op_kernel->name() << ":"
+            << op_kernel->type_string();
   tracing::ScopedActivity activity(op_kernel->name(), op_kernel->type_string(),
                                    op_kernel->IsExpensive());
   op_kernel->ComputeAsync(context, done);

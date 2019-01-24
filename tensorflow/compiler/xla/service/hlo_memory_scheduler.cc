@@ -480,6 +480,7 @@ StatusOr<HloInstructionSequence> ListMemoryScheduler(
     const LogicalBuffer::SizeFunction& size_function,
     const absl::flat_hash_map<const HloComputation*, int64>&
         memory_by_computation) {
+  LOG(INFO) << "ListMemoryScheduler ";
   return ListScheduler::Run(computation, points_to_analysis, size_function,
                             memory_by_computation);
 }
@@ -490,6 +491,7 @@ StatusOr<HloInstructionSequence> PostOrderMemoryScheduler(
     const LogicalBuffer::SizeFunction& size_function,
     const absl::flat_hash_map<const HloComputation*, int64>&
         memory_by_computation) {
+  LOG(INFO) << "HloInsturctionSequence";
   return HloInstructionSequence(computation->MakeInstructionPostOrder());
 }
 
@@ -507,6 +509,7 @@ StatusOr<HloInstructionSequence> DefaultMemoryScheduler(
   // - Postorder does not use any heuristics.
   // List wins for most of our benchmarks; postorder-based schedulers win for
   // some RNNs.
+  LOG(INFO) << "DefaultMemoryScheduler ";
   TF_ASSIGN_OR_RETURN(
       HloInstructionSequence list_sequence,
       ListMemoryScheduler(computation, points_to_analysis, size_function,
@@ -534,8 +537,8 @@ StatusOr<HloInstructionSequence> DefaultMemoryScheduler(
                       HeapSimulator::MinimumMemoryForComputation(
                           *computation, post_order_sequence, points_to_analysis,
                           size_function, &memory_by_computation));
-  VLOG(2) << "Min-memory post order sequence: "
-          << HumanReadableNumBytes(post_order_memory);
+  LOG(INFO) << "Min-memory post order sequence: "
+            << HumanReadableNumBytes(post_order_memory);
 
   auto min_memory = std::min({dfs_memory, post_order_memory, list_memory});
 
@@ -585,6 +588,7 @@ StatusOr<HloSchedule> ScheduleModule(
 StatusOr<HloInstructionSequence> ScheduleComputation(
     HloComputation* computation,
     const LogicalBuffer::SizeFunction& size_function) {
+  LOG(INFO) << "Hlo Memory Scheduler -  ScheduleComputation";
   CHECK(!computation->IsFusionComputation());
   TF_ASSIGN_OR_RETURN(std::unique_ptr<TuplePointsToAnalysis> points_to_analysis,
                       TuplePointsToAnalysis::Run(computation->parent()));

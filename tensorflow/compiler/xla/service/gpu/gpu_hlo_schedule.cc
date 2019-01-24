@@ -192,6 +192,7 @@ GpuHloSchedule::GpuHloSchedule() {}
 StatusOr<std::unique_ptr<GpuHloSchedule>> GpuHloSchedule::Build(
     const HloModule& module, const StreamAssignment& stream_assignment,
     int64 pointer_size) {
+  LOG(INFO) << "GPUHloSchedule::Build() ";
   std::unique_ptr<GpuHloSchedule> schedule(new GpuHloSchedule);
 
   // Initialize thunk_launch_order_, the total order of thunk launches.

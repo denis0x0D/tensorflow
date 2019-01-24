@@ -967,6 +967,7 @@ StatusOr<int64> HloRematerialization::CalledComputationsMemoryUsage(
 StatusOr<bool> HloRematerialization::RematerializeComputation(
     HloComputation* computation, HloSchedule* schedule,
     int64 memory_limit_bytes) {
+  LOG(INFO) << "Rematerialize computation ";
   VLOG(1) << "Rematerializing computation " << computation->name()
           << " with limit " << HumanReadableNumBytes(memory_limit_bytes);
   VLOG(1) << "peak memory usage is "

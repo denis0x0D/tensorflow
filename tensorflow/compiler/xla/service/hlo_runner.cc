@@ -141,6 +141,7 @@ StatusOr<Literal> HloRunner::Execute(
     std::unique_ptr<HloModule> module,
     const absl::Span<const Literal* const> arguments, bool run_hlo_passes,
     ExecutionProfile* profile) {
+  LOG(INFO) << "HloRunner::Execute";
   TF_ASSIGN_OR_RETURN(std::vector<ScopedShapedBuffer> argument_buffers,
                       TransferLiteralsToDevice(arguments));
   TF_ASSIGN_OR_RETURN(ScopedShapedBuffer result,
@@ -244,6 +245,7 @@ StatusOr<ScopedShapedBuffer> HloRunner::ExecuteWithDeviceBuffers(
 StatusOr<std::vector<Literal>> HloRunner::ExecuteReplicated(
     std::unique_ptr<HloModule> module,
     const ReplicatedExecuteOptions& options) {
+  LOG(INFO) << "HloRunner::ExecuteReplicated ";
   TF_ASSIGN_OR_RETURN(
       std::unique_ptr<Executable> executable,
       CreateExecutable(std::move(module), options.run_hlo_passes));
@@ -394,6 +396,7 @@ ServiceExecutableRunOptions HloRunner::GetServiceRunOptionsForDevice(
 
 Backend& HloRunner::backend() {
   if (!backend_) {
+    LOG(INFO) << "HloRunner::backend() ";
     backend_ = Backend::CreateDefaultBackend().ConsumeValueOrDie();
     VLOG(1) << "Executing on platform " << backend().platform()->Name();
   }

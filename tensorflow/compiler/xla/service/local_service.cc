@@ -47,6 +47,7 @@ namespace xla {
 /* static */ StatusOr<std::unique_ptr<LocalService>> LocalService::NewService(
     const ServiceOptions& options) {
   se::Platform* platform = options.platform();
+  LOG(INFO) << "LocalService::NewService";
   if (platform == nullptr) {
     TF_ASSIGN_OR_RETURN(platform, PlatformUtil::GetDefaultPlatform());
   }

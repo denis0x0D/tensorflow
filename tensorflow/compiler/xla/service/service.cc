@@ -972,6 +972,7 @@ Status Service::TransferToClient(const TransferToClientRequest* arg,
 
 Status Service::TransferToServer(const TransferToServerRequest* arg,
                                  TransferToServerResponse* result) {
+  LOG(INFO) << "TransferToServer";
   TF_ASSIGN_OR_RETURN(Literal literal,
                       Literal::CreateFromProto(arg->literal()));
   const Shape& shape = literal.shape();

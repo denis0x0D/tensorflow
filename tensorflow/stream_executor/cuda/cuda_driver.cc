@@ -534,6 +534,7 @@ CUDADriver::ContextGetSharedMemConfig(CudaContext* context) {
     unsigned int shared_mem_bytes, CUstream stream, void **kernel_params,
     void **extra) {
   ScopedActivateContext activation(context);
+  LOG(INFO) << "CUDADriver::LaunchKernel " << function;
   VLOG(2) << "launching kernel: " << function << "; gdx: " << grid_dim_x
           << " gdy: " << grid_dim_y << " gdz: " << grid_dim_z
           << " bdx: " << block_dim_x << " bdy: " << block_dim_y
@@ -547,6 +548,7 @@ CUDADriver::ContextGetSharedMemConfig(CudaContext* context) {
     return false;
   }
   VLOG(2) << "successfully launched kernel";
+  LOG(INFO) << "CUDADriver successfully launched kernel ";
   return true;
 }
 
@@ -567,6 +569,7 @@ CUDADriver::ContextGetSharedMemConfig(CudaContext* context) {
                                       const char *ptx_contents,
                                       CUmodule *module) {
   port::Notification notification;
+  LOG(INFO) << "CUDADriver::LoadPtx ";
   bool ret = true;
   GetDriverExecutor()->Schedule([context, ptx_contents, module, &ret,
                                  &notification]() {

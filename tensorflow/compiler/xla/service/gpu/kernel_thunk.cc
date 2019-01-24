@@ -38,6 +38,7 @@ KernelThunk::KernelThunk(absl::Span<const BufferAllocation* const> args,
 
 Status KernelThunk::Initialize(const GpuExecutable& executable,
                                se::StreamExecutor* executor) {
+  LOG(INFO) << "KernelThunk::Initalize";
   tensorflow::mutex_lock lock(mutex_);
   if (!loader_spec_) {
     loader_spec_.reset(new se::MultiKernelLoaderSpec(args_.size()));
@@ -75,6 +76,7 @@ Status KernelThunk::ExecuteOnStream(const BufferAllocations& buffer_allocations,
                                     se::Stream* stream,
                                     HloExecutionProfiler* profiler) {
   // Load the kernel.
+  LOG(INFO) << "KernelThunk::ExecuteOnStream ";
   se::StreamExecutor* executor = stream->parent();
   LaunchDimensions launch_dimensions;
   const se::KernelBase* kernel = nullptr;
@@ -89,6 +91,7 @@ Status KernelThunk::ExecuteOnStream(const BufferAllocations& buffer_allocations,
   }
 
   VLOG(3) << "Launching " << kernel->name();
+  LOG(INFO) << "KernelThunk launcing " << kernel->name();
   // Launch the kernel with potentially multiple blocks and threads.
   static constexpr int kKernelArgsLimit = 1024;
   auto kernel_args = absl::make_unique<se::KernelArgsArray<kKernelArgsLimit>>();
