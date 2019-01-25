@@ -950,7 +950,7 @@ Status MarkForCompilationPass::RunImpl(
       is_compilable_fn, &compilation_candidates, &isolated_nodes));
 
   if (compilation_candidates.empty()) {
-    VLOG(2) << "No compilable candidates";
+    LOG(INFO) << "No compilable candidates";
     return Status::OK();
   }
 

@@ -774,7 +774,7 @@ StatusOr<std::unique_ptr<Executable>> Service::BuildExecutable(
     const HloModuleProto& module_proto,
     std::unique_ptr<HloModuleConfig> module_config, Backend* backend,
     se::StreamExecutor* executor, DeviceMemoryAllocator* device_allocator) {
-  VLOG(1) << StrFormat(
+  LOG(INFO) << StrFormat(
       "BuildExecutable on service %p with serialized module proto: %s", this,
       module_proto.name());
 

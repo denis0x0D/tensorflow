@@ -1493,7 +1493,7 @@ void ExecutorImpl::InitializePending(const Graph* graph,
 }
 
 void ExecutorState::RunAsync(Executor::DoneCallback done) {
-  LOG(INFO) << "ExecutorState::RunAsync ";
+ // LOG(INFO) << "ExecutorState::RunAsync ";
   const Graph* graph = impl_->graph_.get();
   TaggedNodeSeq ready;
 
@@ -1598,7 +1598,7 @@ bool MightTrace(const NodeItem& item,
 }
 
 void ExecutorState::Process(TaggedNode tagged_node, int64 scheduled_nsec) {
-  LOG(INFO) << "ExecuroState::Process ";
+  //LOG(INFO) << "ExecuroState::Process ";
   WithContext wc(context_);
   const GraphView& gview = impl_->gview_;
   TaggedNodeSeq ready;
@@ -2231,7 +2231,7 @@ bool ExecutorState::NodeDone(const Status& s, const Node* node,
 void ExecutorState::ScheduleReady(const TaggedNodeSeq& ready,
                                   TaggedNodeReadyQueue* inline_ready) {
   if (ready.empty()) return;
-  LOG(INFO) << "ExecutroState::ScheduleReady";
+  //LOG(INFO) << "ExecutroState::ScheduleReady";
 
   int64 scheduled_nsec = 0;
   if (stats_collector_) {

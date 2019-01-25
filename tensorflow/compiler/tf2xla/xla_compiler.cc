@@ -163,6 +163,7 @@ Status BuildComputation(
   // Attach a common operator name as metadata. This has no semantic effect — it
   // merely makes the HLO graph more readable when visualized via TensorBoard,
   // since TensorBoard forms groups out of operators with similar names.
+  LOG(INFO) << "BuildComputation ";
   xla::OpMetadata retval_metadata;
   retval_metadata.set_op_name("XLA_Retvals");
   builder->SetOpMetadata(retval_metadata);
@@ -525,11 +526,9 @@ Status XlaCompiler::CompileFunction(
     }
   }
 
-  if (VLOG_IS_ON(2)) {
-    VLOG(2) << "XlaCompiler::CompileFunction: "
+  LOG(INFO) << "XlaCompiler::CompileFunction: "
             << dump_graph::DumpGraphToFile(
                    absl::StrCat("xla_compile_function_", function_id), *graph);
-  }
 
   VLOG(1) << "====================================================";
   TF_RETURN_IF_ERROR(
@@ -931,6 +930,10 @@ Status XlaCompiler::CompileGraph(const XlaCompiler::CompileOptions& options,
   core::ScopedUnref context_unref(context);
 
   std::vector<XlaCompiler::Argument> real_args(args.begin(), args.end());
+  LOG(INFO) << "Xla compile args: ";
+  for (int i = 0; i < args.size(); ++i) {
+    LOG(INFO) << args[i].HumanString();
+  }
   int token_input_index = -1;
   std::unique_ptr<xla::XlaOp> token_output;
   if (options.add_token_input_output) {

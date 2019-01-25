@@ -264,8 +264,8 @@ Status FunctionalizeControlFlowPass::Run(
     const string func_attr = it->second;
     NameAttrList func;
     TF_RETURN_IF_ERROR(GetNodeAttr(n->attrs(), func_attr, &func));
-    VLOG(2) << "Graph has node " << n->type_string()
-            << ". Corresponding function: " << func.name();
+    LOG(INFO) << "Graph has node " << n->type_string()
+              << ". Corresponding function: " << func.name();
     string new_func_name = options.flib_def->UniqueFunctionName(
         absl::StrCat(func.name(), "_f15n_"));
     bool modified;
