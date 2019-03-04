@@ -1,0 +1,84 @@
+; SPIR-V
+; Version: 1.3
+; Generator: Khronos; 0
+; Bound: 55
+; Schema: 0
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %15 "compute_kernel" %gl_GlobalInvocationID
+               OpExecutionMode %15 LocalSize 32 32 1
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpMemberDecorate %_struct_10 0 Offset 0
+               OpDecorate %_struct_10 BufferBlock
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+               OpDecorate %12 DescriptorSet 0
+               OpDecorate %12 Binding 0
+               OpDecorate %13 DescriptorSet 0
+               OpDecorate %13 Binding 1
+               OpDecorate %14 DescriptorSet 0
+               OpDecorate %14 Binding 2
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+       %bool = OpTypeBool
+      %float = OpTypeFloat 32
+      %int_0 = OpConstant %int 0
+       %void = OpTypeVoid
+          %8 = OpTypeFunction %void
+      %v3int = OpTypeVector %int 3
+      %_ptr_Input_v3int = OpTypePointer Input %v3int
+    %int_ptr = OpTypePointer Function %int
+%_runtimearr_int = OpTypeRuntimeArray %int
+ %_struct_10 = OpTypeStruct %_runtimearr_int
+%_ptr_Uniform__struct_10 = OpTypePointer Uniform %_struct_10
+         %12 = OpVariable %_ptr_Uniform__struct_10 Uniform
+         %13 = OpVariable %_ptr_Uniform__struct_10 Uniform
+         %14 = OpVariable %_ptr_Uniform__struct_10 Uniform
+         %gl_GlobalInvocationID = OpVariable %_ptr_Input_v3int Input
+    %K = OpConstant %int 1280 ; Matrix dim
+    %int_4 = OpConstant %int 4
+%_ptr_Uniform_int = OpTypePointer Uniform %int
+%_ptr_Input_int = OpTypePointer Input %int
+     %int_64 = OpConstant %int 64
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+         %15 = OpFunction %void None %8
+         %16 = OpLabel
+         %local_ptr = OpVariable %int_ptr Function
+         %global_row_ptr = OpAccessChain %_ptr_Input_int %gl_GlobalInvocationID %int_0
+         %global_col_ptr = OpAccessChain %_ptr_Input_int %gl_GlobalInvocationID %int_1
+         %global_row = OpLoad %int %global_row_ptr None
+         %global_col = OpLoad %int %global_col_ptr None
+         %36 = OpIMul %int %global_col %K
+         %C_index = OpIAdd %int %36 %global_row
+         %C_ptr = OpInBoundsAccessChain %_ptr_Uniform_int %12 %int_0 %C_index
+               OpStore %C_ptr %int_0
+               OpBranch %27
+         %27 = OpLabel
+         %index_k = OpPhi %int %int_0 %16 %22 %21
+         %28 = OpSLessThan %bool %index_k %K
+               OpLoopMerge %24 %21 None
+               OpBranchConditional %28 %29 %24 1280 1
+         %29 = OpLabel
+         %31 = OpIMul %int %index_k %K
+         %A_index = OpIAdd %int %31 %global_row
+         %32 = OpIMul %int %global_col %K
+         %B_index = OpIAdd %int %32 %index_k
+         %43 = OpInBoundsAccessChain %_ptr_Uniform_int %13 %int_0 %A_index
+         %44 = OpInBoundsAccessChain %_ptr_Uniform_int %14 %int_0 %B_index
+         %45 = OpLoad %int %43 None
+         %48 = OpLoad %int %44 None
+         %49 = OpIMul %int %45 %48
+         %50 = OpLoad %int %C_ptr None
+         %51 = OpIAdd %int %50 %49
+               OpStore %C_ptr %51 None
+               OpBranch %21
+         %21 = OpLabel
+         %22 = OpIAdd %int %index_k %int_1
+               OpBranch %27
+         %24 = OpLabel
+               OpBranch %30
+         %30 = OpLabel
+               OpReturn
+               OpFunctionEnd
+

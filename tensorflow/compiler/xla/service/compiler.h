@@ -40,6 +40,8 @@ limitations under the License.
 #include "tensorflow/core/platform/protobuf.h"
 #include "tensorflow/core/platform/stream_executor_no_cuda.h"
 #include "tensorflow/core/platform/thread_annotations.h"
+//TODO: Consider how to make BufferInfo as generic as possible
+#include "tensorflow/compiler/tf2xla/cpu_function_runtime.h"
 
 namespace xla {
 
@@ -56,6 +58,11 @@ class AotCompilationResult {
   AotCompilationResult& operator=(AotCompilationResult const&) = delete;
 
   virtual ~AotCompilationResult() = default;
+  virtual HloProfilePrinterData* hlo_profile_printer_data() const = 0;
+  virtual const ObjectFileData& object_file_data() const = 0;
+  virtual int64 result_buffer_index() const = 0;
+  virtual const std::vector<::tensorflow::cpu_function_runtime::BufferInfo>&
+  buffer_infos() const = 0;
 
  protected:
   AotCompilationResult() = default;
@@ -71,6 +78,9 @@ class AotCompilationOptions {
 
   // Returns the ID of the platform to which these options apply.
   virtual se::Platform::Id PlatformId() const = 0;
+
+  virtual const std::string& triple() const = 0;
+  virtual const std::string& entry_point_name() const = 0;
 
   // Optional allocator that may be used for allocating temp space on the device
   // during compilation.

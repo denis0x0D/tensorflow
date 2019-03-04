@@ -88,8 +88,10 @@ Status Main(const MainFlags& flags) {
   TF_RETURN_IF_ERROR(ReadProtoFile(flags.graph, &graph_def));
   CompileResult compile_result;
   TF_RETURN_IF_ERROR(CompileGraph(graph_def, config, flags, &compile_result));
+  LOG(INFO) << "End of CompileGraph";
 
   // Write output files.
+  /*TODO: Enable this part after codegen is done.
   Env* env = Env::Default();
   const std::vector<char>& obj = compile_result.aot->object_file_data();
   TF_RETURN_IF_ERROR(
@@ -116,6 +118,7 @@ Status Main(const MainFlags& flags) {
   TF_RETURN_IF_ERROR(GenerateHeader(codegen_opts, config, compile_result,
                                     metadata_result, &header));
   TF_RETURN_IF_ERROR(WriteStringToFile(env, flags.out_header, header));
+  */
   return Status::OK();
 }
 
