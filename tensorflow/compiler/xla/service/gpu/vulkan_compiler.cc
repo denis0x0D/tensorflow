@@ -348,6 +348,20 @@ se::Platform::Id VulkanCompiler::PlatformId() const {
   return se::host::kHostPlatformId;
 }
 
+//FIXME: Move this function to Vulkan Executable when it is done.
+static int64 ShapeSizeBytes(const Shape& shape) {
+  // On the cpu, opaques are pointers.
+  if (shape.IsOpaque()) {
+    return sizeof(void*);
+  }
+  return ShapeUtil::ByteSizeOf(shape, sizeof(void*));
+}
+
+HloCostAnalysis::ShapeSizeFunction VulkanCompiler::ShapeSizeBytesFunction()
+    const {
+  return ShapeSizeBytes;
+}
+
 Status VulkanCompiler::RunHloPassesOnModuleGroup(
     HloModuleGroup* module_group,
     absl::Span<se::StreamExecutor* const> executors,
@@ -369,8 +383,29 @@ StatusOr<std::vector<std::unique_ptr<Executable>>> VulkanCompiler::Compile(
     std::unique_ptr<HloModuleGroup> module_group,
     std::vector<std::vector<se::StreamExecutor*>> stream_execs,
     DeviceMemoryAllocator* device_allocator) {
-  return Unimplemented("Compiler is not supported for Vulkan backend");
+  return Unimplemented("Compile is not supported for Vulkan backend");
+}
+
+StatusOr<std::unique_ptr<Executable>> VulkanCompiler::RunBackend(
+    std::unique_ptr<HloModule> module, se::StreamExecutor* executor,
+    DeviceMemoryAllocator* device_allocator) {
+  return Unimplemented("RunBackend is not supported for Vulkan backend");
+}
+
+StatusOr<std::unique_ptr<HloModule>> VulkanCompiler::RunHloPasses(
+    std::unique_ptr<HloModule> module, se::StreamExecutor* stream_exec,
+    DeviceMemoryAllocator* device_allocator) {
+  return Unimplemented("RunHloPasses is not supported for Vulkan backend");
 }
 
 }  // namespace gpu
 }  // namespace xla
+
+static bool InitModule() {
+  // Register Vulkan compiler
+  xla::Compiler::RegisterCompilerFactory(
+      stream_executor::host::kHostPlatformId,
+      []() { return absl::make_unique<xla::gpu::VulkanCompiler>(); });
+  return true;
+}
+static bool module_initialized = InitModule();

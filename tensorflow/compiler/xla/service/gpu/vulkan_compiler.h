@@ -101,11 +101,21 @@ class VulkanCompiler : public Compiler {
   CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
                      const AotCompilationOptions& options);
 
+  StatusOr<std::unique_ptr<Executable>> RunBackend(
+      std::unique_ptr<HloModule> module, se::StreamExecutor* executor,
+      DeviceMemoryAllocator* device_allocator) override;
+
+  HloCostAnalysis::ShapeSizeFunction ShapeSizeBytesFunction() const override;
+
+  StatusOr<std::unique_ptr<HloModule>> RunHloPasses(
+      std::unique_ptr<HloModule> module, se::StreamExecutor* stream_exec,
+      DeviceMemoryAllocator* device_allocator) override;
+
  private:
   Status RunHloPassesThroughLayoutAssn(HloModule* module, bool is_aot_compile);
   Status RunHloPassesAfterLayoutAssn(HloModule* module, bool is_aot_compile);
   Status RunHloPasses(HloModule* module, bool is_aot_compile);
-  se::Platform::Id PlatformId() const;
+  se::Platform::Id PlatformId() const override;
 
   tensorflow::mutex mutex_;
   TF_DISALLOW_COPY_AND_ASSIGN(VulkanCompiler);
