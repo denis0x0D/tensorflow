@@ -340,6 +340,7 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
      //   std::move(object_file_data), std::move(buffer_infos),
      //  result_slice.index(), std::move(hlo_profile_printer_data)));
   }
+  LOG(INFO) << "End of CompileAheadOfTime";
   return std::move(results);
 }
 

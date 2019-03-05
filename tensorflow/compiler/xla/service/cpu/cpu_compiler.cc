@@ -928,6 +928,8 @@ HloCostAnalysis::ShapeSizeFunction CpuCompiler::ShapeSizeBytesFunction() const {
 }  // namespace cpu
 }  // namespace xla
 
+// FIXME: enable cpu compiler when Vulkan platform is enabled.
+/*
 static bool InitModule() {
   xla::Compiler::RegisterCompilerFactory(
       stream_executor::host::kHostPlatformId,
@@ -935,3 +937,4 @@ static bool InitModule() {
   return true;
 }
 static bool module_initialized = InitModule();
+*/

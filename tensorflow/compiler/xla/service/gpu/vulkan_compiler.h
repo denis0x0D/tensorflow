@@ -77,7 +77,7 @@ class VulkanAotCompilationResult : public AotCompilationResult {
 class VulkanCompiler : public Compiler {
  public:
   VulkanCompiler();
-  ~VulkanCompiler();
+  ~VulkanCompiler() override {}
 
   using Compiler::RunBackend;
   using Compiler::RunHloPasses;

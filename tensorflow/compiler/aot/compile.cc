@@ -81,11 +81,13 @@ Status CompileXla(xla::CompileOnlyClient* client,
     return errors::Unknown("XLA compilation failed: ",
                            aot_or.status().error_message());
   }
+  /*
   compile_result->aot = xla::unique_ptr_static_cast<xla::AotCompilationResult>(
       std::move(aot_or.ValueOrDie().back()));
   compile_result->entry_point = aot_opts.entry_point_name();
   compile_result->pointer_size =
       xla::CompileOnlyClient::PointerSizeForTriple(aot_opts.triple());
+      */
   return Status::OK();
 }
 
