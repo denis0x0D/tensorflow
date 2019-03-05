@@ -50,6 +50,7 @@ cc_library(
         "//tensorflow/compiler/xla/service:compiler",
         "//tensorflow/compiler/xla/service/cpu:buffer_info_util",
         "//tensorflow/compiler/xla/service/cpu:cpu_compiler",
+        "//tensorflow/compiler/xla/service/gpu:vulkan_compiler",
         "//tensorflow/core:core_cpu_internal",
         "//tensorflow/core:framework_internal",
         "//tensorflow/core:lib",

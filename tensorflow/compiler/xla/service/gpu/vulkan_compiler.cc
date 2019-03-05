@@ -252,29 +252,32 @@ auto memory_alignment = [](LogicalBuffer::Color) { return kMemoryAlignment; };
 StatusOr<std::vector<std::unique_ptr<AotCompilationResult>>>
 VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
                                    const AotCompilationOptions& aot_options) {
+  LOG(INFO) << "Compile Ahead Of Time";
   TF_RET_CHECK(!module_group->empty());
   std::vector<std::unique_ptr<HloModule>> modules =
       module_group->ConsumeModules();
 
   // TODO: Check for Vulkan
+  LOG(INFO) << "Check platfrom id ";
   if (aot_options.PlatformId() != se::host::kHostPlatformId) {
     return InvalidArgument("Incompatible AOT compilation platform");
   }
 
+  LOG(INFO) << "Create Vulkan Compilation Options";
   const VulkanAotCompilationOptions& options =
       static_cast<const VulkanAotCompilationOptions&>(aot_options);
   std::vector<std::unique_ptr<AotCompilationResult>> results;
 
   for (size_t i = 0; i < modules.size(); ++i) {
     HloModule* module = modules[i].get();
-    VLOG(2) << "Compiling ahead-of-time: " << module->name();
+    LOG(INFO) << "Compiling ahead-of-time: " << module->name();
 
-    VLOG(2) << "Before optimization:";
+    LOG(INFO) << "Before optimization:";
     XLA_VLOG_LINES(2, module->ToString());
 
     TF_RETURN_IF_ERROR(RunHloPasses(module, /*is_aot_compile=*/true));
 
-    VLOG(2) << "After optimization:";
+    LOG(INFO) << "After optimization:";
     XLA_VLOG_LINES(2, module->ToString());
 
     TF_ASSIGN_OR_RETURN(HloSchedule schedule,

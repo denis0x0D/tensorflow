@@ -449,6 +449,7 @@ cc_library(
         ":scratch_allocator",
         "//tensorflow/compiler/xla:literal_util",
         "//tensorflow/compiler/xla:protobuf_util",
+        "//tensorflow/compiler/tf2xla:cpu_function_runtime",
         "//tensorflow/compiler/xla/service:compiler",
         "//tensorflow/compiler/xla/service:device_memory_allocator",
         "//tensorflow/compiler/xla/service:hlo",

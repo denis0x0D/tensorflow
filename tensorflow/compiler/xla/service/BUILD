@@ -922,6 +922,7 @@ cc_library(
         "//tensorflow/compiler/xla:util",
         "//tensorflow/core:lib",
         "//tensorflow/core:stream_executor_no_cuda",
+        "//tensorflow/compiler/tf2xla:cpu_function_runtime",
         "@com_google_absl//absl/types:span",
     ],
 )
