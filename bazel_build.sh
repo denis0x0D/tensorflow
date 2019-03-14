@@ -1,4 +1,4 @@
-bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package
+bazel build --config=opt //tensorflow/tools/pip_package:build_pip_package
 if [ $? -ne 0 ]; then
   echo "Failed to build tensorflow "
   exit $?

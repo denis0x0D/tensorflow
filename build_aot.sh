@@ -1,1 +1,1 @@
-bazel build --config=opt --config=cuda --verbose_failures //tensorflow/compiler/aot:tfcompile
+bazel build --config=opt --verbose_failures //tensorflow/compiler/aot:tfcompile
