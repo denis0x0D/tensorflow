@@ -1,0 +1,87 @@
+; SPIR-V
+; Version: 1.3
+; Generator: Khronos; 0
+; Bound: 55
+; Schema: 0
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %15 "compute_kernel"
+               OpExecutionMode %15 LocalSize 1 1 1
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpMemberDecorate %_struct_10 0 Offset 0
+               OpDecorate %_struct_10 BufferBlock
+               OpDecorate %12 DescriptorSet 0
+               OpDecorate %12 Binding 0
+               OpDecorate %13 DescriptorSet 0
+               OpDecorate %13 Binding 1
+               OpDecorate %14 DescriptorSet 0
+               OpDecorate %14 Binding 2
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+       %bool = OpTypeBool
+      %float = OpTypeFloat 32
+      %int_0 = OpConstant %int 0
+       %void = OpTypeVoid
+          %8 = OpTypeFunction %void
+%_runtimearr_int = OpTypeRuntimeArray %int
+ %_struct_10 = OpTypeStruct %_runtimearr_int
+%_ptr_Uniform__struct_10 = OpTypePointer Uniform %_struct_10
+         %12 = OpVariable %_ptr_Uniform__struct_10 Uniform
+         %13 = OpVariable %_ptr_Uniform__struct_10 Uniform
+         %14 = OpVariable %_ptr_Uniform__struct_10 Uniform
+    %K = OpConstant %int 64
+    %int_4 = OpConstant %int 4
+%_ptr_Uniform_int = OpTypePointer Uniform %int
+     %int_64 = OpConstant %int 64
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+         %15 = OpFunction %void None %8
+         %16 = OpLabel
+               OpBranch %17
+         %17 = OpLabel
+         %index_i = OpPhi %int %int_0 %16 %35 %34
+         %19 = OpSLessThan %bool %index_i %K
+               OpLoopMerge %30 %34 None
+               OpBranchConditional %19 %20 %30 4 1
+         %20 = OpLabel
+         %index_j = OpPhi %int %int_0 %17 %33 %24
+         %36 = OpIMul %int %index_i %K
+         %C_index = OpIAdd %int %36 %index_j
+         %C_ptr = OpInBoundsAccessChain %_ptr_Uniform_int %12 %int_0 %C_index
+               OpStore %C_ptr %int_0
+         %26 = OpSLessThan %bool %index_j %K
+               OpLoopMerge %34 %24 None
+               OpBranchConditional %26 %27 %34 4 1
+         %27 = OpLabel
+         %index_k = OpPhi %int %int_0 %20 %22 %21
+         %28 = OpSLessThan %bool %index_k %K
+               OpLoopMerge %24 %21 None
+               OpBranchConditional %28 %29 %24 4 1
+         %29 = OpLabel
+         %31 = OpIMul %int %index_i %K
+         %A_index = OpIAdd %int %31 %index_k
+         %32 = OpIMul %int %index_k %K
+         %B_index = OpIAdd %int %32 %index_j
+         %43 = OpInBoundsAccessChain %_ptr_Uniform_int %13 %int_0 %A_index
+         %44 = OpInBoundsAccessChain %_ptr_Uniform_int %14 %int_0 %B_index
+         %45 = OpLoad %int %43 None
+         %48 = OpLoad %int %44 None
+         %49 = OpIMul %int %45 %48
+         %50 = OpLoad %int %C_ptr None
+         %51 = OpIAdd %int %50 %49
+               OpStore %C_ptr %51 None
+               OpBranch %21
+         %21 = OpLabel
+         %22 = OpIAdd %int %index_k %int_1
+               OpBranch %27
+         %24 = OpLabel
+         %33 = OpIAdd %int %index_j %int_1
+               OpBranch %20
+         %34 = OpLabel
+         %35 = OpIAdd %int %index_i %int_1
+               OpBranch %17
+         %30 = OpLabel
+               OpReturn
+               OpFunctionEnd
+

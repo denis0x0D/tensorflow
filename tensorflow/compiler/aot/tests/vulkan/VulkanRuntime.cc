@@ -39,6 +39,24 @@ using namespace std;
     exit(-1);                                                                  \
   }
 
+static void PrintMatrixRowMajor(const int32_t *A, int M, int K) {
+  for (int i = 0; i < M; ++i) {
+    for (int j = 0; j < K; ++j) {
+      cout << A[i * K + j] << " ";
+    }
+    cout << '\n';
+  }
+}
+
+static void PrintMatrixColMajor(const int32_t *A, int M, int K) {
+  for (int i = 0; i < K; ++i) {
+    for (int j = 0; j < M; ++j) {
+      cout << A[i * M + j] << " ";
+    }
+    cout << '\n';
+  }
+}
+
 static void SaveToFile(uint32_t *ptr_data, size_t data_size,
                        const char *filename_to_write) {
   if (!filename_to_write)
@@ -183,7 +201,7 @@ VkResult vkGetBestComputeQueueNPH(VkPhysicalDevice physicalDevice,
 }
 
 int main(int argc, const char *const argv[]) {
-  const char* filename = nullptr;
+  const char *filename = nullptr;
 
   if (argc > 1) {
     filename = argv[1];
@@ -254,8 +272,8 @@ int main(int argc, const char *const argv[]) {
 
     vkGetPhysicalDeviceMemoryProperties(physicalDevices[i], &properties);
 
-    const int32_t bufferLength = 128;
-
+    const size_t K = 64;
+    const int32_t bufferLength = K * K;
     const uint32_t bufferSize = sizeof(int32_t) * bufferLength;
 
     // we are going to need two buffers from this one memory
@@ -304,15 +322,14 @@ int main(int argc, const char *const argv[]) {
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory3, 0, memorySize, 0, (void **)&payload3));
 
-    for (uint32_t k = 0; k < memorySize / sizeof(int32_t); k++) {
-      // Output buffer.
-      payload1[k] = 0;
-      // Input buffer 1
-      payload2[k] = 9;
-      // Input buffer 2.
-      payload3[k] = 5;
+    // Init 2D tensors.
+    for (int i = 0; i < K; ++i) {
+      for (int j = 0; j < K; ++j) {
+        payload1[i * K + j] = 0;
+        payload2[i * K + j] = i;
+        payload3[i * K + j] = i;
+      }
     }
-
     vkUnmapMemory(device, memory1);
     vkUnmapMemory(device, memory2);
     vkUnmapMemory(device, memory3);
@@ -343,9 +360,10 @@ int main(int argc, const char *const argv[]) {
     size_t size = 0;
 
     // Hardcoded path to binary shader.
-    uint32_t* shader_ptr = ReadFromFile(&size, filename);
+    uint32_t *shader_ptr = ReadFromFile(&size, filename);
+
     if (!shader_ptr) {
-      std::cerr << "Shader is nullptr " << std::endl;
+      std::cerr << "Shader is null" << std::endl;
       exit(1);
     }
 
@@ -472,7 +490,7 @@ int main(int argc, const char *const argv[]) {
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                             pipelineLayout, 0, 1, &descriptorSet, 0, 0);
 
-    vkCmdDispatch(commandBuffer, bufferSize / sizeof(int32_t), 1, 1);
+    vkCmdDispatch(commandBuffer, 1, 1, 1);
 
     BAIL_ON_BAD_RESULT(vkEndCommandBuffer(commandBuffer));
 
@@ -493,16 +511,25 @@ int main(int argc, const char *const argv[]) {
         vkMapMemory(device, memory2, 0, memorySize, 0, (void **)&payload2));
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory3, 0, memorySize, 0, (void **)&payload3));
-
+/*
+    std::cout << "A: " << std::endl;
+    PrintMatrixRowMajor(payload2, K, K);
+    std::cout << "B: "<< std::endl;
+    PrintMatrixRowMajor(payload3, K, K);
+    std::cout << "C: " << std::endl;
+    PrintMatrixRowMajor(payload1, K, K);
+    */
+#ifdef DEBUG
     for (uint32_t k = 0; k < memorySize / sizeof(uint32_t); k++) {
       std::cout << "x1 " << payload1[k] << " ";
       std::cout << "x2 " << payload2[k] << " ";
       std::cout << "x3 " << payload3[k] << " ";
-      BAIL_ON_BAD_RESULT(payload1[k] == (payload2[k] + payload3[k])
-                             ? VK_SUCCESS
-                             : VK_ERROR_OUT_OF_HOST_MEMORY);
+      // BAIL_ON_BAD_RESULT(payload1[k] == (payload2[k] + payload3[k])
+      //                      ? VK_SUCCESS
+      //                     : VK_ERROR_OUT_OF_HOST_MEMORY);
       cout << '\n';
     }
+#endif
 
     std::cout << "End of the execution " << std::endl;
   }
