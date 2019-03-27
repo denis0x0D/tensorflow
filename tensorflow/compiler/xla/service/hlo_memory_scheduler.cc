@@ -554,11 +554,6 @@ StatusOr<HloInstructionSequence> DefaultMemoryScheduler(
   }
 }
 
-void Print(const std::vector<HloInstruction*>& instructions) {
-  for (size_t i = 0; i < instructions.size(); ++i)
-    LOG(INFO) << instructions[i]->ToShortString();
-}
-
 StatusOr<HloSchedule> ScheduleModule(
     HloModule* module, const LogicalBuffer::SizeFunction& size_function,
     const MemorySchedulerAlgorithm& algorithm) {
@@ -572,7 +567,6 @@ StatusOr<HloSchedule> ScheduleModule(
                           ScheduleComputationHelper(
                               computation, *points_to_analysis, size_function,
                               algorithm, memory_by_computation));
-      Print(computation_sequence.instructions());
       memory_by_computation[computation] =
           HeapSimulator::MinimumMemoryForComputation(
               *computation, computation_sequence, *points_to_analysis,
