@@ -278,6 +278,7 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
     TF_RETURN_IF_ERROR(RunHloPasses(module, /*is_aot_compile=*/true));
 
     LOG(INFO) << "After optimization:";
+    LOG(INFO) << module->ToString();
     XLA_VLOG_LINES(2, module->ToString());
 
     TF_ASSIGN_OR_RETURN(HloSchedule schedule,
