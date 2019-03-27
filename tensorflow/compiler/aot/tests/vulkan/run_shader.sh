@@ -1,1 +1,1 @@
-./compute kernel_sum.spv
+./compute kernel_matmul_2.spv

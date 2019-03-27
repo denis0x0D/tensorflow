@@ -1,1 +1,1 @@
-spirv-as kernel_sum.spvasm -o kernel_sum.spv
+spirv-as kernel_matmul_2.spvasm -o kernel_matmul_2.spv

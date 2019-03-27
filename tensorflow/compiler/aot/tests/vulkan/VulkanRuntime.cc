@@ -272,7 +272,7 @@ int main(int argc, const char *const argv[]) {
 
     vkGetPhysicalDeviceMemoryProperties(physicalDevices[i], &properties);
 
-    const size_t K = 8;
+    const size_t K = 1280;
     const int32_t bufferLength = K * K;
     const uint32_t bufferSize = sizeof(int32_t) * bufferLength;
 
@@ -490,7 +490,7 @@ int main(int argc, const char *const argv[]) {
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                             pipelineLayout, 0, 1, &descriptorSet, 0, 0);
 
-    vkCmdDispatch(commandBuffer, 8, 8, 1);
+    vkCmdDispatch(commandBuffer, 40, 40, 1);
 
     BAIL_ON_BAD_RESULT(vkEndCommandBuffer(commandBuffer));
 
