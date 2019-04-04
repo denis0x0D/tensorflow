@@ -1,0 +1,4 @@
+TODO:
+1. Implement support for Decoration aka Decorate.
+2. Implement full support for IRprinter.
+3. Impement an easy way to create Variable, Type and Constant and Function.
