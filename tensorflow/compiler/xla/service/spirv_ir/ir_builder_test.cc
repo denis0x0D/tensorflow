@@ -6,15 +6,25 @@ int main() {
   IRPrinter *printer = new IRPrinter();
   Module *module = new Module("test");
 
-  spv::Id void_id = module->GetOrCreateCustomType("void");
-  spv::Id int_id = module->GetOrCreateCustomType("int");
+  // Types.
+  spv::Id int_32_t =
+      module->CreateCustomType(spv::Op::OpTypeInt, 0, {"32", "1"});
+  spv::Id uint_32_t =
+      module->CreateCustomType(spv::Op::OpTypeInt, 0, {"32", "0"});
+  spv::Id void_t = module->CreateCustomType(spv::Op::OpTypeVoid, 0);
+  spv::Id bool_t = module->CreateCustomType(spv::Op::OpTypeBool, 0);
+  spv::Id func_type = module->CreateCustomType(spv::Op::OpTypeFunction, void_t);
 
-  Function *function = module->GetOrCreateFunction("test_function", "None");
+  // Variables and constants.
+  spv::Id var1 = module->CreateGlobalVariable(int_32_t, true, {"40"});
+
+  Function *function =
+      module->GetOrCreateFunction("test_function", void_t, func_type, "None");
 
   BasicBlock *entry = new BasicBlock("entry");
   BasicBlock *next_block = new BasicBlock("next");
   BasicBlock *ret = new BasicBlock("ret");
-  
+
   function->AddEntryBlock(entry);
   function->AddRetBlock(ret);
 
