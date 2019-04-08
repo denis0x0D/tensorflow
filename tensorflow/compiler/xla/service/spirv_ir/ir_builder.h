@@ -144,6 +144,49 @@ class Instruction {
   void Accept(IRVisitor *visitor) { visitor->Visit(this); }
   size_t WordCount() const { return word_count_; }
 
+  std::string GetStringOpCode() {
+    switch (op_code_) {
+      case spv::Op::OpVariable:
+        return "OpVariable";
+      case spv::Op::OpConstant:
+        return "OpConstant";
+      case spv::Op::OpTypeVoid:
+        return "OpTypeVoid";
+      case spv::Op::OpTypeInt:
+        return "OpTypeInt";
+      case spv::Op::OpTypeFloat:
+        return "OpTypeFloat";
+      case spv::Op::OpTypeBool:
+        return "OpTypeBool";
+      case spv::Op::OpTypeFunction:
+        return "OpTypeFunction";
+      case spv::Op::OpTypePointer:
+        return "OpTypePointer";
+      case spv::Op::OpTypeVector:
+        return "OpTypeVector";
+      case spv::Op::OpLoad:
+        return "OpLoad";
+      case spv::Op::OpStore:
+        return "OpStore";
+      case spv::Op::OpBranch:
+        return "OpBranch";
+      case spv::Op::OpBranchConditional:
+        return "OpBranchConditional";
+      case spv::Op::OpLabel:
+        return "OpLabel";
+      case spv::Op::OpPhi:
+        return "OpPhi";
+      case spv::Op::OpAccessChain:
+        return "OpAccessChain";
+      case spv::Op::OpInBoundsAccessChain:
+        return "OpInBoundsAccessChain";
+      case spv::Op::OpIMul:
+        return "OpIMul";
+      default:
+        return "Unknown";
+    }
+  }
+
  private:
   spv::Op op_code_;
   spv::Id result_id_{0};
@@ -156,7 +199,9 @@ class IRPrinter : public IRVisitor {
  public:
   IRPrinter() {}
   ~IRPrinter() {}
-
+  // Instruction processing is split based on instruction semantics.
+  // It could make sence, because some instructions have different text layout
+  // than binary form.
   void Visit(Instruction *instruction) {
     switch (instruction->GetOpCode()) {
       case spv::Op::OpVariable:
@@ -169,8 +214,10 @@ class IRPrinter : public IRVisitor {
       case spv::Op::OpTypeBool:
       case spv::Op::OpTypeFunction:
       case spv::Op::OpTypeVector:
-      case spv::Op::OpTypePointer:
         ProcessTypeOp(instruction);
+        break;
+      case spv::Op::OpTypePointer:
+        ProcessPointerTypeOp(instruction);
         break;
       case spv::Op::OpLoad:
       case spv::Op::OpStore:
@@ -194,12 +241,39 @@ class IRPrinter : public IRVisitor {
     }
   }
 
-  void ProcessVariableOp(Instruction *instruction) {}
-  void ProcessTypeOp(Instruction *instruction) {}
-  void ProcessMemAccessOp(Instruction *instruction) {}
-  void ProcessControlFlowOp(Instruction *instruction) {}
-  void ProcessAccessChainOp(Instruction *instruction) {}
-  void ProcessBinOp(Instruction *instruction) {}
+  void ProcessVariableOp(Instruction *instruction) {
+    ProcessInstruction(instruction, instruction->GetStringOpCode());
+    ProcessOperands(instruction->GetOperands());
+  }
+
+  void ProcessTypeOp(Instruction *instruction) {
+    ProcessInstruction(instruction, instruction->GetStringOpCode());
+    ProcessOperands(instruction->GetOperands());
+  }
+
+  // The layout is different agaist usual type op.
+  void ProcessPointerTypeOp(Instruction *instruction) {
+  }
+
+  void ProcessMemAccessOp(Instruction *instruction) {
+    ProcessInstruction(instruction, instruction->GetStringOpCode());
+    ProcessOperands(instruction->GetOperands());
+  }
+
+  void ProcessControlFlowOp(Instruction *instruction) {
+    ProcessInstruction(instruction, instruction->GetStringOpCode());
+    ProcessOperands(instruction->GetOperands());
+  }
+
+  void ProcessAccessChainOp(Instruction *instruction) {
+    ProcessInstruction(instruction, instruction->GetStringOpCode());
+    ProcessOperands(instruction->GetOperands());
+  }
+
+  void ProcessBinOp(Instruction *instruction) {
+    ProcessInstruction(instruction, instruction->GetStringOpCode());
+    ProcessOperands(instruction->GetOperands());
+  }
 
   void ProcessInstruction(Instruction *instruction, std::string op_code) {
     if (instruction->GetResultId()) {
