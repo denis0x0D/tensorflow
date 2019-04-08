@@ -245,10 +245,23 @@ class BasicBlock {
   }
 
   ~BasicBlock() {
-    // Have to clean all instructions inside the basic block.
-    for (size_t i = 0; i < instructions_.size(); ++i) {
-      delete instructions_[i];
+    // Check that successors are freed.
+    if (CanFrees()) {
+      for (auto *instruction : instructions_) {
+        delete instruction;
+      }
     }
+    freed_ = true;
+  }
+
+  // We should check the successors at first.
+  bool CanFrees() {
+    for (auto *bb : successors_) {
+      if (!bb->freed_) {
+        return false;
+      }
+    }
+    return true;
   }
 
   void AddInstruction(Instruction *instruction) {
@@ -271,6 +284,7 @@ class BasicBlock {
   std::vector<BasicBlock *> successors_;
   std::string name_;
   spv::Id label_id_{0};
+  bool freed_{false};
 };
 
 // Represents a spir-v function, consists of basic blocks.
