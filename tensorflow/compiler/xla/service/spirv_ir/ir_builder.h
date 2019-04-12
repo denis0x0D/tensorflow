@@ -40,22 +40,6 @@ class BasicBlock;
 class Function;
 class Module;
 
-enum class LiteralType { kLiteralNumber, kLiteralString };
-
-// TODO: Needs a OpDecorate.
-
-// TODO: Think about how to represent literal.
-class Literal {
- public:
-  Literal() {}
-  ~Literal() {}
-  // TODO move, copy constr.
-
- private:
-  std::vector<uint32> value;
-  LiteralType kind;
-};
-
 // The operand could be an id or literal, in case of literal it's an id
 // for lookup table.
 class Operand {
@@ -179,6 +163,8 @@ class Instruction {
         return "OpBranch";
       case spv::Op::OpBranchConditional:
         return "OpBranchConditional";
+      case spv::Op::OpLoopMerge:
+        return "OpLoopMerge";
       case spv::Op::OpLabel:
         return "OpLabel";
       case spv::Op::OpPhi:
@@ -195,6 +181,24 @@ class Instruction {
         return "OpFunction";
       case spv::Op::OpIMul:
         return "OpIMul";
+      case spv::Op::OpIAdd:
+        return "OpIAdd";
+      case spv::Op::OpSLessThan:
+        return "OpSLessThan";
+      case spv::Op::OpReturn:
+        return "OpReturn";
+      case spv::Op::OpFunctionEnd:
+        return "OpFunctionEnd";
+      case spv::Op::OpCapability:
+        return "OpCapability";
+      case spv::Op::OpMemoryModel:
+        return "OpMemoryModel";
+      case spv::Op::OpExtInstImport:
+        return "OpExtInstImport";
+      case spv::Op::OpEntryPoint:
+        return "OpEntryPoint";
+      case spv::Op::OpExecutionMode:
+        return "OpExecutionMode";
       default:
         return "Unknown";
     }
@@ -232,8 +236,10 @@ class IRPrinter : public IRVisitor {
         ProcessTypeOp(instruction);
         break;
       case spv::Op::OpTypePointer:
-      case spv::Op::OpFunction:
         ProcessPointerTypeOp(instruction);
+        break;
+      case spv::Op::OpFunction:
+        ProcessFunctionOp(instruction);
         break;
       case spv::Op::OpLoad:
       case spv::Op::OpStore:
@@ -243,6 +249,9 @@ class IRPrinter : public IRVisitor {
       case spv::Op::OpBranchConditional:
       case spv::Op::OpLabel:
       case spv::Op::OpPhi:
+      case spv::Op::OpLoopMerge:
+      case spv::Op::OpReturn:
+      case spv::Op::OpFunctionEnd:
         ProcessControlFlowOp(instruction);
         break;
       case spv::Op::OpAccessChain:
@@ -254,10 +263,52 @@ class IRPrinter : public IRVisitor {
         ProcessDecorate(instruction);
         break;
       case spv::Op::OpIMul:
+      case spv::Op::OpIAdd:
+      case spv::Op::OpSLessThan:
         // TODO: Add all bin op instruction.
         ProcessBinOp(instruction);
+        break;
+      case spv::Op::OpCapability:
+      case spv::Op::OpExtInstImport:
+      case spv::Op::OpMemoryModel:
+      case spv::Op::OpEntryPoint:
+      case spv::Op::OpExecutionMode:
+        ProcessHeaderOp(instruction);
+        break;
       default:
         break;
+    }
+  }
+
+  void ProcessHeaderOp(Instruction *instruction) {
+    if (instruction->GetOpCode() == spv::Op::OpEntryPoint) {
+      // TODO: Add assert.
+      unsigned index = 0;
+      stream_ << tab_ << instruction->GetStringOpCode() << white_space_;
+      auto operands = instruction->GetOperands();
+      stream_ << GetSPIRVContext()->LookUpForLiteral(operands[index].GetId())
+              << white_space_;
+      ++index;
+      stream_ << ident_ << instruction->GetResultId() << white_space_;
+      stream_ << quote_
+              << GetSPIRVContext()->LookUpForLiteral(operands[index].GetId())
+              << quote_ << white_space_;
+      ++index;
+      stream_ << ident_ << operands[index].GetId() << new_line_;
+    } else if (instruction->GetOpCode() == spv::Op::OpExecutionMode) {
+      stream_ << tab_ << instruction->GetStringOpCode() << white_space_
+              << ident_ << instruction->GetResultId() << white_space_;
+      ProcessOperands(instruction->GetOperands());
+    } else if (instruction->GetOpCode() == spv::Op::OpExtInstImport) {
+      ProcessInstruction(instruction);
+      // TODO: Add assert
+      stream_ << quote_
+              << GetSPIRVContext()->LookUpForLiteral(
+                     instruction->GetOperands()[0].GetId())
+              << quote_ << new_line_;
+    } else {
+      ProcessInstruction(instruction);
+      ProcessOperands(instruction->GetOperands());
     }
   }
 
@@ -286,6 +337,13 @@ class IRPrinter : public IRVisitor {
     stream_ << new_line_;
   }
 
+  void ProcessFunctionOp(Instruction *instruction) {
+    stream_ << ident_ << instruction->GetResultId() << white_space_ << assign_
+            << white_space_ << instruction->GetStringOpCode() << white_space_
+            << ident_ << instruction->GetTypeId() << white_space_;
+    ProcessOperands(instruction->GetOperands());
+  }
+
   void ProcessMemAccessOp(Instruction *instruction) {
     ProcessInstruction(instruction);
     ProcessOperands(instruction->GetOperands());
@@ -307,7 +365,7 @@ class IRPrinter : public IRVisitor {
   }
 
   void ProcessDecorate(Instruction *instruction) {
-    stream_ << instruction->GetStringOpCode() << white_space_
+    stream_ << tab_ << instruction->GetStringOpCode() << white_space_ << ident_
             << instruction->GetResultId() << white_space_;
     ProcessOperands(instruction->GetOperands());
   }
@@ -316,6 +374,8 @@ class IRPrinter : public IRVisitor {
     if (instruction->GetResultId()) {
       stream_ << ident_ << instruction->GetResultId() << white_space_ << assign_
               << white_space_;
+    } else {
+      stream_ << tab_;
     }
     stream_ << instruction->GetStringOpCode() << white_space_;
     if (instruction->GetTypeId()) {
@@ -337,6 +397,16 @@ class IRPrinter : public IRVisitor {
 
   void Dump() { std::cout << stream_.str(); }
 
+  void AddMetaInfo() {
+    // TODO: I did not find any official specification of SPIR-V
+    // text format. This meta is the same as SPIR-V tools generate.
+    stream_ << "; SPIR-V" << new_line_;
+    stream_ << "; Version: 1.3" << new_line_;
+    stream_ << "; Generator: Khronos; 0" << new_line_;
+    stream_ << "; Bound: 0" << new_line_;
+    stream_ << "; Schema: 0" << new_line_;
+  }
+
  private:
   std::stringstream stream_;
   char ident_ = '%';
@@ -344,6 +414,8 @@ class IRPrinter : public IRVisitor {
   char white_space_ = ' ';
   char assign_ = '=';
   char new_line_ = '\n';
+  char quote_ = '"';
+  char tab_ = '\t';
 };
 
 class BasicBlock {
@@ -360,8 +432,8 @@ class BasicBlock {
   ~BasicBlock() {
     // Check that successors are freed.
     if (CanFrees()) {
-      for (auto &it : instructions_) {
-        delete it.second;
+      for (auto *it : instructions_) {
+        delete it;
       }
     }
     freed_ = true;
@@ -377,15 +449,18 @@ class BasicBlock {
     return true;
   }
 
+  // Liner search.
   Instruction *GetInstructionById(spv::Id id) {
-    if (instructions_.count(id)) {
-      return instructions_[id];
+    for (auto *it: instructions_) {
+      if (it->GetResultId() == id) {
+        return it;
+      }
     }
     return nullptr;
   }
 
   void AddInstruction(Instruction *instruction) {
-    instructions_.insert({instruction->GetResultId(), instruction});
+    instructions_.push_back(instruction);
   }
 
   void AddPredeccessor(BasicBlock *predeccessor) {
@@ -396,12 +471,10 @@ class BasicBlock {
 
   spv::Id Label() { return label_id_; }
 
-  std::unordered_map<spv::Id, Instruction *> &GetInstructions() {
-    return instructions_;
-  }
+  std::vector<Instruction *> &GetInstructions() { return instructions_; }
 
  private:
-  std::unordered_map<spv::Id, Instruction *> instructions_;
+  std::vector<Instruction *> instructions_;
   std::vector<BasicBlock *> predeccessors_;
   std::vector<BasicBlock *> successors_;
   std::string name_;
@@ -425,14 +498,19 @@ class Function {
   BasicBlock *GetRetBlock() { return ret_block_; }
 
   void AddRetBlock(BasicBlock *bb) {
+    Instruction *ret_instruction = new Instruction(spv::Op::OpReturn, 0, 0);
+    Instruction *func_end_instruction =
+        new Instruction(spv::Op::OpFunctionEnd, 0, 0);
+    bb->AddInstruction(ret_instruction);
+    bb->AddInstruction(func_end_instruction);
     ret_block_ = bb;
     basic_blocks_.push_back(bb);
   }
 
   void SetEntryPoint(Instruction *entry_point) { entry_point_ = entry_point; }
   Instruction *GetEntryPoint() { return entry_point_; }
-
   std::vector<BasicBlock *> &GetBasicBlocks() { return basic_blocks_; }
+  std::string GetFunctionName() { return function_name_; }
 
  private:
   std::vector<BasicBlock *> basic_blocks_;
@@ -457,6 +535,10 @@ class Module {
   }
 
   void Accept(IRVisitor *visitor) {
+    // Visit header.
+    for (auto *header_inst : header_) {
+      visitor->Visit(header_inst);
+    }
     // Visit decoration table.
     for (auto *dec : decoration_table_) {
       visitor->Visit(dec);
@@ -476,14 +558,53 @@ class Module {
       visitor->Visit(entry);
 
       for (BasicBlock *bb : table_instance.second->GetBasicBlocks()) {
-        for (auto &it : bb->GetInstructions()) {
-          visitor->Visit(it.second);
+        for (auto *it : bb->GetInstructions()) {
+          visitor->Visit(it);
         }
       }
     }
   }
 
-  void CreateEntryPoint() {}
+  void InitHeader() {
+    auto cap_operands =
+        GetSPIRVContext()->CreateOperandsFromLiterals({"Shader"});
+    Instruction *cap_instruction =
+        new Instruction(spv::Op::OpCapability, 0, 0, std::move(cap_operands));
+    header_.push_back(cap_instruction);
+    spv::Id id = GetSPIRVContext()->GetUniqueId();
+    auto ext_operands =
+        GetSPIRVContext()->CreateOperandsFromLiterals({"GLSL.std.450"});
+    Instruction *ext_import = new Instruction(spv::Op::OpExtInstImport, id, 0,
+                                              std::move(ext_operands));
+    header_.push_back(ext_import);
+    auto mem_operands =
+        GetSPIRVContext()->CreateOperandsFromLiterals({"Logical", "GLSL450"});
+    Instruction *mem_model =
+        new Instruction(spv::Op::OpMemoryModel, 0, 0, std::move(mem_operands));
+    header_.push_back(mem_model);
+  }
+
+  void CreateEntryPoint(Function *func, spv::Id work_group_id) {
+    // TOOD: Add asserts
+    std::vector<Operand> operands =
+        GetSPIRVContext()->CreateOperandsFromLiterals(
+            {"GLCompute", func->GetFunctionName()});
+    operands.push_back(Operand(work_group_id));
+    Instruction *global_entry =
+        new Instruction(spv::Op::OpEntryPoint,
+                        func->GetEntryPoint()->GetResultId(), 0, operands);
+    header_.push_back(global_entry);
+  }
+
+  void CreateExecutionMode(Function *func,
+                           std::vector<std::string> local_sizes) {
+    auto operands =
+        GetSPIRVContext()->CreateOperandsFromLiterals(std::move(local_sizes));
+    Instruction *exec_mode = new Instruction(
+        spv::Op::OpExecutionMode, func->GetEntryPoint()->GetResultId(), 0,
+        std::move(operands));
+    header_.push_back(exec_mode);
+  }
 
   void Decorate(spv::Id target_id, std::vector<std::string> literals) {
     std::vector<Operand> operands =
@@ -551,7 +672,7 @@ class Module {
  private:
   std::unordered_map<std::string, Function *> functions_;
   std::string module_name_;
-  std::vector<std::string> header_;
+  std::vector<Instruction *> header_;
   std::vector<Instruction *> decoration_table_;
   std::vector<Instruction *> user_types_table_;
   std::vector<Instruction *> user_var_table_;
@@ -575,18 +696,29 @@ class IRBuilder {
   }
 
   // %id = OpLoad %type %ptr MemAccesstype
-  spv::Id CreateLoad(spv::Op type, spv::Id ptr) {
+  spv::Id CreateLoad(spv::Id type, spv::Id ptr,
+                     std::vector<std::string> literals) {
     spv::Id id = GetSPIRVContext()->GetUniqueId();
+    std::vector<Operand> operands =
+        GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
+    operands.insert(operands.begin(), Operand(ptr));
     Instruction *instruction =
-        new Instruction(spv::Op::OpLoad, id, type, {ptr});
+        new Instruction(spv::Op::OpLoad, id, type, std::move(operands));
     insert_point_->AddInstruction(instruction);
     return id;
   }
 
   // OpStore %ptr %value MemAccessType
-  void CreateStore(spv::Op ptr, spv::Id value) {
+  void CreateStore(spv::Id ptr, spv::Id value,
+                   std::vector<std::string> literals) {
+    std::vector<Operand> operands{ptr, value};
+    std::vector<Operand> other_operands =
+        GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
+    if (other_operands.size()) {
+      operands.push_back(other_operands.front());
+    }
     Instruction *instruction =
-        new Instruction(spv::Op::OpStore, 0, 0, {ptr, value});
+        new Instruction(spv::Op::OpStore, 0, 0, std::move(operands));
     insert_point_->AddInstruction(instruction);
   }
 
@@ -614,15 +746,21 @@ class IRBuilder {
   }
 
   // OpLoopMerge %merge_id %continue_id
-  void CreateLoopMerge(BasicBlock *merge_block, BasicBlock *continue_block) {
+  void CreateLoopMerge(BasicBlock *merge_block, BasicBlock *continue_block,
+                       std::vector<std::string> literals) {
+    std::vector<Operand> operands{Operand(merge_block->Label()),
+                                  Operand(continue_block->Label())};
+    std::vector<Operand> other_operands =
+        GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
+    // TODO: Add assert.
+    operands.push_back(other_operands[0]);
     Instruction *instruction =
-        new Instruction(spv::Op::OpLoopMerge, 0, 0,
-                        {merge_block->Label(), continue_block->Label()});
+        new Instruction(spv::Op::OpLoopMerge, 0, 0, std::move(operands));
     insert_point_->AddInstruction(instruction);
   }
 
   // %id = OpAccessChain %ptr_type %ptr {%offsets}
-  spv::Id CreateAccesssChain(spv::Op op_code, spv::Id ptr_type, spv::Id ptr,
+  spv::Id CreateAccessChain(spv::Op op_code, spv::Id ptr_type, spv::Id ptr,
                              const std::vector<spv::Id> &offsets) {
     spv::Id id = GetSPIRVContext()->GetUniqueId();
     std::vector<Operand> operands{ptr_type, ptr};
@@ -632,7 +770,7 @@ class IRBuilder {
     Instruction *instruction = new Instruction(op_code, id, 0, operands);
     insert_point_->AddInstruction(instruction);
     return id;
-  }
+    }
 
   // %id = OpBinOp %type %lhs %rhs
   spv::Id CreateBinOp(spv::Op op_code, spv::Id type, spv::Id lhs, spv::Id rhs) {
@@ -643,8 +781,6 @@ class IRBuilder {
   }
 
   // %id = OpPhi %type {%value %label}
-  // TODO: Consider to change api to return id and use hash table of
-  // insructions.
   spv::Id CreatePhi(spv::Id type) {
     spv::Id id = GetSPIRVContext()->GetUniqueId();
     Instruction *instruction = new Instruction(spv::Op::OpPhi, id, type, {});
@@ -652,8 +788,10 @@ class IRBuilder {
     return id;
   }
 
-  void AddIncoming(spv::Id phi_id, spv::Id id, BasicBlock *bb) {
-    Instruction *phi = insert_point_->GetInstructionById(phi_id);
+  void AddIncoming(BasicBlock *phi_block, spv::Id phi_id, spv::Id id,
+                   BasicBlock *bb) {
+    if (!phi_block) return;
+    Instruction *phi = phi_block->GetInstructionById(phi_id);
     if (!phi) return;
     phi->AddOperand(id);
     phi->AddOperand(bb->Label());

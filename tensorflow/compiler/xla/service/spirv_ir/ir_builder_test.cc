@@ -4,7 +4,9 @@ int main() {
   using namespace xla;
   using namespace spirv;
   IRPrinter *printer = new IRPrinter();
+  printer->AddMetaInfo();
   Module *module = new Module("test");
+  module->InitHeader();
 
   // Types.
   spv::Id int_32_t =
@@ -29,6 +31,7 @@ int main() {
 
   // Constants
   spv::Id int_0 = module->CreateGlobalVariable(int_32_t, true, {"0"});
+  spv::Id int_1 = module->CreateGlobalVariable(int_32_t, true, {"1"});
   spv::Id int_128 = module->CreateGlobalVariable(int_32_t, true, {"128"});
 
   // Variables
@@ -44,7 +47,7 @@ int main() {
 
   spv::Id global_invoc_id =
       module->CreateGlobalVariable(ptr_input_v3int, false, {"Input"});
-  spv::Id ptr_unifrom_int =
+  spv::Id ptr_uniform_int =
       module->CreateCustomType(spv::Op::OpTypePointer, int_32_t, {"Uniform"});
   spv::Id ptr_input_int =
       module->CreateCustomType(spv::Op::OpTypePointer, int_32_t, {"Input"});
@@ -63,24 +66,63 @@ int main() {
   module->Decorate(input_array3, {"Binding", "2"});
 
   Function *function =
-      module->GetOrCreateFunction("compte_shader", void_t, func_type, "None");
+      module->GetOrCreateFunction("compute_kernel", void_t, func_type, "None");
 
   BasicBlock *entry = new BasicBlock("entry");
   BasicBlock *next_block1 = new BasicBlock("next1");
   BasicBlock *next_block2 = new BasicBlock("next2");
+  BasicBlock *next_block3 = new BasicBlock("next3");
   BasicBlock *ret = new BasicBlock("ret");
 
   function->AddEntryBlock(entry);
   function->AddBasicBlock(next_block1);
   function->AddBasicBlock(next_block2);
+  function->AddBasicBlock(next_block3);
   function->AddRetBlock(ret);
 
   IRBuilder *builder = new IRBuilder(entry, module);
   builder->SetInsertPoint(entry);
   builder->CreateBr(next_block1);
+
   builder->SetInsertPoint(next_block1);
   spv::Id phi_id = builder->CreatePhi(int_32_t);
-  builder->AddIncoming(phi_id, int_0, entry);
+  builder->AddIncoming(next_block1, phi_id, int_0, entry);
+  spv::Id cmp =
+      builder->CreateBinOp(spv::Op::OpSLessThan, bool_t, phi_id, int_128);
+  builder->CreateLoopMerge(ret, next_block3, {"None"});
+  builder->CreateCondBr(cmp, next_block2, ret);
+
+  builder->SetInsertPoint(next_block2);
+  spv::Id C_ptr = builder->CreateAccessChain(spv::Op::OpInBoundsAccessChain,
+                                             ptr_uniform_int, input_array3,
+                                             {int_0, phi_id});
+  spv::Id C_value = builder->CreateLoad(int_32_t, C_ptr, {"None"});
+
+  spv::Id B_ptr = builder->CreateAccessChain(spv::Op::OpInBoundsAccessChain,
+                                             ptr_uniform_int, input_array2,
+                                             {int_0, phi_id});
+  spv::Id B_value = builder->CreateLoad(int_32_t, B_ptr, {"None"});
+
+  spv::Id A_value =
+      builder->CreateBinOp(spv::Op::OpIAdd, int_32_t, C_value, B_value);
+
+  spv::Id A_ptr = builder->CreateAccessChain(spv::Op::OpInBoundsAccessChain,
+                                             ptr_uniform_int, input_array1,
+                                             {int_0, phi_id});
+  builder->CreateStore(A_ptr, A_value, {"None"});
+  builder->CreateBr(next_block3);
+
+  builder->SetInsertPoint(next_block3);
+  // Increment index
+  spv::Id index =
+      builder->CreateBinOp(spv::Op::OpIAdd, int_32_t, phi_id, int_1);
+  builder->CreateBr(next_block1);
+
+  // Add incoming value and branch to phi node
+  builder->AddIncoming(next_block1, phi_id, index, next_block3);
+
+  module->CreateEntryPoint(function, global_invoc_id);
+  module->CreateExecutionMode(function, {"LocalSize", "1", "1", "1"});
 
   module->Accept(printer);
   printer->Dump();
