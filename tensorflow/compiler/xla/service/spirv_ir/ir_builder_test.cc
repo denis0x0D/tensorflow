@@ -1,11 +1,13 @@
 #include "ir_builder.h"
+#include <memory>
 
 int main() {
   using namespace xla;
   using namespace spirv;
-  IRPrinter *printer = new IRPrinter();
+  using namespace std;
+  unique_ptr<Module> module = make_unique<Module>("Test module");
+  unique_ptr<IRPrinter> printer = make_unique<IRPrinter>();
   printer->AddMetaInfo();
-  Module *module = new Module("test");
   module->InitHeader();
 
   // Types.
@@ -80,7 +82,7 @@ int main() {
   function->AddBasicBlock(next_block3);
   function->AddRetBlock(ret);
 
-  IRBuilder *builder = new IRBuilder(entry, module);
+  unique_ptr<IRBuilder> builder = make_unique<IRBuilder>(entry, module.get());
   builder->SetInsertPoint(entry);
   builder->CreateBr(next_block1);
 
@@ -124,7 +126,7 @@ int main() {
   module->CreateEntryPoint(function, global_invoc_id);
   module->CreateExecutionMode(function, {"LocalSize", "1", "1", "1"});
 
-  module->Accept(printer);
+  module->Accept(printer.get());
   printer->Dump();
   return 0;
 }

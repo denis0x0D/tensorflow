@@ -1,10 +1,10 @@
 Implemented:
 1.IRBuilder pretty much works, using that API is able to build simple shader for element wise add.
 2.IRPrinter works, and outputs the text format of the shader.
+3. Added binary ops.
+4. Added asserts.
+5. Added simple destructor.
 
 TODO:
-1. Add all binary ops.
-2. Cover code with asserts.
-3. Implement correct destruction for the internal objets.
-4. Consider to implement InstrList with hands written linked list, instead of using std::vector,
+1. Consider to implement InstrList with hands written linked list, instead of using std::vector,
   because we probably need an abilit to reorder instructions inside the basic block.

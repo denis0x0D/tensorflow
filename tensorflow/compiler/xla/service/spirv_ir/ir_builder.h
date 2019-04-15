@@ -503,23 +503,9 @@ class BasicBlock {
   }
 
   ~BasicBlock() {
-    // Check that successors are freed.
-    if (CanFrees()) {
-      for (auto *it : instructions_) {
-        delete it;
-      }
+    for (auto *it : instructions_) {
+      delete it;
     }
-    freed_ = true;
-  }
-
-  // We should check the successors at first.
-  bool CanFrees() {
-    for (auto *bb : successors_) {
-      if (!bb->freed_) {
-        return false;
-      }
-    }
-    return true;
   }
 
   // Liner search.
@@ -541,9 +527,7 @@ class BasicBlock {
   }
 
   void AddSuccessor(BasicBlock *successor) { successors_.push_back(successor); }
-
   spv::Id Label() { return label_id_; }
-
   std::vector<Instruction *> &GetInstructions() { return instructions_; }
 
  private:
@@ -552,7 +536,6 @@ class BasicBlock {
   std::vector<BasicBlock *> successors_;
   std::string name_;
   spv::Id label_id_{0};
-  bool freed_{false};
 };
 
 // Represents a spir-v function, consists of basic blocks.
@@ -604,7 +587,30 @@ class Module {
   Module &operator=(Module &&other) = delete;
 
   ~Module() {
-    // clear all
+    // Frees header at first.
+    for (auto *header_inst : header_) {
+      delete header_inst;
+    }
+    for (auto *dec : decoration_table_) {
+      delete dec;
+    }
+    for (auto *type : user_types_table_) {
+      delete type;
+    }
+    for (auto *var : user_var_table_) {
+      delete var;
+    }
+
+    // So, at this moment just process the array and free the
+    // basic block in order it was added.
+    for (auto &table_instance : functions_) {
+      for (auto *bb : table_instance.second->GetBasicBlocks()) {
+        delete bb;
+      }
+      delete table_instance.second->GetEntryPoint();
+      // Delete function.
+      delete table_instance.second;
+    }
   }
 
   void Accept(IRVisitor *visitor) {
