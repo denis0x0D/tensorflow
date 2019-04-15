@@ -105,15 +105,22 @@ class IRVisitor {
 // specification.
 class Instruction {
  public:
+  // In case global variable or other type of instruction which does not
+  // require to be inserted into basic block - parent basic block is nullptr.
   Instruction(spv::Op op_code, spv::Id result_id, spv::Id type_id,
-              std::vector<Operand> operands)
+              std::vector<Operand> operands, BasicBlock *parent = nullptr)
       : op_code_(op_code),
         result_id_(result_id),
         type_id_(type_id),
-        operands_(std::move(operands)) {}
+        operands_(std::move(operands)),
+        parent_(parent) {}
 
-  Instruction(spv::Op op_code, spv::Id result_id, spv::Id type_id)
-      : op_code_(op_code), result_id_(result_id), type_id_(type_id) {}
+  Instruction(spv::Op op_code, spv::Id result_id, spv::Id type_id,
+              BasicBlock *parent = nullptr)
+      : op_code_(op_code),
+        result_id_(result_id),
+        type_id_(type_id),
+        parent_(parent) {}
 
   Instruction(const Instruction &other) = delete;
   Instruction(Instruction &&other) = delete;
@@ -130,7 +137,6 @@ class Instruction {
   spv::Id GetTypeId() const { return type_id_; }
   std::vector<Operand> &GetOperands() { return operands_; }
   void Accept(IRVisitor *visitor) { visitor->Visit(this); }
-  size_t WordCount() const { return word_count_; }
 
   std::string GetStringOpCode() {
     switch (op_code_) {
@@ -258,7 +264,7 @@ class Instruction {
   spv::Id result_id_{0};
   spv::Id type_id_{0};
   std::vector<Operand> operands_;
-  size_t word_count_{0};
+  BasicBlock *parent_{nullptr};
 };
 
 class IRPrinter : public IRVisitor {
@@ -781,8 +787,8 @@ class IRBuilder {
     std::vector<Operand> operands =
         GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
     operands.insert(operands.begin(), Operand(ptr));
-    Instruction *instruction =
-        new Instruction(spv::Op::OpLoad, id, type, std::move(operands));
+    Instruction *instruction = new Instruction(
+        spv::Op::OpLoad, id, type, std::move(operands), insert_point_);
     insert_point_->AddInstruction(instruction);
     return id;
   }
@@ -796,8 +802,8 @@ class IRBuilder {
     if (other_operands.size()) {
       operands.push_back(other_operands.front());
     }
-    Instruction *instruction =
-        new Instruction(spv::Op::OpStore, 0, 0, std::move(operands));
+    Instruction *instruction = new Instruction(
+        spv::Op::OpStore, 0, 0, std::move(operands), insert_point_);
     insert_point_->AddInstruction(instruction);
   }
 
@@ -805,8 +811,8 @@ class IRBuilder {
   void CreateBr(BasicBlock *dest) {
     dest->AddPredeccessor(insert_point_);
     insert_point_->AddSuccessor(dest);
-    Instruction *instruction =
-        new Instruction(spv::Op::OpBranch, 0, 0, {dest->Label()});
+    Instruction *instruction = new Instruction(spv::Op::OpBranch, 0, 0,
+                                               {dest->Label()}, insert_point_);
     insert_point_->AddInstruction(instruction);
   }
 
@@ -818,9 +824,9 @@ class IRBuilder {
     true_block->AddPredeccessor(insert_point_);
     false_block->AddPredeccessor(insert_point_);
 
-    Instruction *instruction =
-        new Instruction(spv::Op::OpBranchConditional, 0, 0,
-                        {condition, true_block->Label(), false_block->Label()});
+    Instruction *instruction = new Instruction(
+        spv::Op::OpBranchConditional, 0, 0,
+        {condition, true_block->Label(), false_block->Label()}, insert_point_);
     insert_point_->AddInstruction(instruction);
   }
 
@@ -833,8 +839,8 @@ class IRBuilder {
         GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
     assert(other_operands.size());
     operands.push_back(other_operands[0]);
-    Instruction *instruction =
-        new Instruction(spv::Op::OpLoopMerge, 0, 0, std::move(operands));
+    Instruction *instruction = new Instruction(
+        spv::Op::OpLoopMerge, 0, 0, std::move(operands), insert_point_);
     insert_point_->AddInstruction(instruction);
   }
 
@@ -846,7 +852,8 @@ class IRBuilder {
     for (size_t i = 0; i < offsets.size(); ++i) {
       operands.push_back(offsets[i]);
     }
-    Instruction *instruction = new Instruction(op_code, id, 0, operands);
+    Instruction *instruction =
+        new Instruction(op_code, id, 0, operands, insert_point_);
     insert_point_->AddInstruction(instruction);
     return id;
     }
@@ -854,7 +861,8 @@ class IRBuilder {
   // %id = OpBinOp %type %lhs %rhs
   spv::Id CreateBinOp(spv::Op op_code, spv::Id type, spv::Id lhs, spv::Id rhs) {
     spv::Id id = GetSPIRVContext()->GetUniqueId();
-    Instruction *instruction = new Instruction(op_code, id, type, {lhs, rhs});
+    Instruction *instruction =
+        new Instruction(op_code, id, type, {lhs, rhs}, insert_point_);
     insert_point_->AddInstruction(instruction);
     return id;
   }
@@ -862,7 +870,8 @@ class IRBuilder {
   // %id = OpPhi %type {%value %label}
   spv::Id CreatePhi(spv::Id type) {
     spv::Id id = GetSPIRVContext()->GetUniqueId();
-    Instruction *instruction = new Instruction(spv::Op::OpPhi, id, type, {});
+    Instruction *instruction =
+        new Instruction(spv::Op::OpPhi, id, type, {}, insert_point_);
     insert_point_->AddInstruction(instruction);
     return id;
   }
@@ -885,7 +894,7 @@ class IRBuilder {
         GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
     Instruction *instruction =
         new Instruction(is_constant ? spv::Op::OpConstant : spv::Op::OpVariable,
-                        id, type_id, std::move(operands));
+                        id, type_id, std::move(operands), insert_point_);
     insert_point_->AddInstruction(instruction);
     return id;
   }
