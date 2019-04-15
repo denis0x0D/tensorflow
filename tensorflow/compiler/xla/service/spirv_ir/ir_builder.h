@@ -22,6 +22,7 @@ limitations under the License.
 #include <memory>
 #include <vector>
 // TODO: Fix this, when integrates with XLA.
+#include <cassert>
 #include <cstdint>
 #include <iostream>
 #include <mutex>
@@ -183,8 +184,56 @@ class Instruction {
         return "OpIMul";
       case spv::Op::OpIAdd:
         return "OpIAdd";
+      case spv::Op::OpISub:
+        return "OpISub";
+      case spv::Op::OpUDiv:
+        return "OpUdiv";
+      case spv::Op::OpSDiv:
+        return "OpSDiv";
+      case spv::Op::OpUMod:
+        return "OpUMod";
+      case spv::Op::OpSRem:
+        return "OpSRem";
+      case spv::Op::OpSMod:
+        return "OpSMod";
+      case spv::Op::OpShiftRightLogical:
+        return "OpShiftRightLogical";
+      case spv::Op::OpShiftLeftLogical:
+        return "OpShitfLeftLogical";
+      case spv::Op::OpBitwiseOr:
+        return "OpBitwiseOr";
+      case spv::Op::OpBitwiseXor:
+        return "OpBitwiseXor";
+      case spv::Op::OpBitwiseAnd:
+        return "OpBitwiseAnd";
+      case spv::Op::OpLogicalOr:
+        return "OpLogicalOr";
+      case spv::Op::OpLogicalNot:
+        return "OpLogicalNot";
+      case spv::Op::OpLogicalEqual:
+        return "OpLogicalEqual";
+      case spv::Op::OpLogicalNotEqual:
+        return "OpLogicalNotEqual";
+      case spv::Op::OpIEqual:
+        return "OpIEqual";
+      case spv::Op::OpINotEqual:
+        return "OpINotEqual";
+      case spv::Op::OpULessThan:
+        return "OpULessThan";
       case spv::Op::OpSLessThan:
         return "OpSLessThan";
+      case spv::Op::OpUGreaterThan:
+        return "OpUGreaterThan";
+      case spv::Op::OpSGreaterThan:
+        return "OpSGreaterThan";
+      case spv::Op::OpULessThanEqual:
+        return "OpULessThanEqual";
+      case spv::Op::OpSLessThanEqual:
+        return "OpSLessThanEqual";
+      case spv::Op::OpUGreaterThanEqual:
+        return "OpUGreaterThanEqual";
+      case spv::Op::OpSGreaterThanEqual:
+        return "OpSGreaterThanEqual";
       case spv::Op::OpReturn:
         return "OpReturn";
       case spv::Op::OpFunctionEnd:
@@ -265,7 +314,30 @@ class IRPrinter : public IRVisitor {
       case spv::Op::OpIMul:
       case spv::Op::OpIAdd:
       case spv::Op::OpSLessThan:
-        // TODO: Add all bin op instruction.
+      case spv::Op::OpUDiv:
+      case spv::Op::OpSDiv:
+      case spv::Op::OpUMod:
+      case spv::Op::OpSRem:
+      case spv::Op::OpSMod:
+      case spv::Op::OpShiftRightLogical:
+      case spv::Op::OpShiftLeftLogical:
+      case spv::Op::OpBitwiseOr:
+      case spv::Op::OpBitwiseXor:
+      case spv::Op::OpBitwiseAnd:
+      case spv::Op::OpLogicalAnd:
+      case spv::Op::OpLogicalOr:
+      case spv::Op::OpLogicalNot:
+      case spv::Op::OpLogicalEqual:
+      case spv::Op::OpLogicalNotEqual:
+      case spv::Op::OpIEqual:
+      case spv::Op::OpINotEqual:
+      case spv::Op::OpULessThan:
+      case spv::Op::OpUGreaterThan:
+      case spv::Op::OpSGreaterThan:
+      case spv::Op::OpULessThanEqual:
+      case spv::Op::OpSLessThanEqual:
+      case spv::Op::OpUGreaterThanEqual:
+      case spv::Op::OpSGreaterThanEqual:
         ProcessBinOp(instruction);
         break;
       case spv::Op::OpCapability:
@@ -281,12 +353,14 @@ class IRPrinter : public IRVisitor {
   }
 
   void ProcessHeaderOp(Instruction *instruction) {
+    assert(instruction && "Instruction is nullptr");
     if (instruction->GetOpCode() == spv::Op::OpEntryPoint) {
-      // TODO: Add assert.
       unsigned index = 0;
-      stream_ << tab_ << instruction->GetStringOpCode() << white_space_;
       auto operands = instruction->GetOperands();
-      stream_ << GetSPIRVContext()->LookUpForLiteral(operands[index].GetId())
+      assert(operands.size() == 3 &&
+             "Operand size for OpEntryPoint should be equal to 3");
+      stream_ << tab_ << instruction->GetStringOpCode() << white_space_;
+            stream_ << GetSPIRVContext()->LookUpForLiteral(operands[index].GetId())
               << white_space_;
       ++index;
       stream_ << ident_ << instruction->GetResultId() << white_space_;
@@ -301,7 +375,8 @@ class IRPrinter : public IRVisitor {
       ProcessOperands(instruction->GetOperands());
     } else if (instruction->GetOpCode() == spv::Op::OpExtInstImport) {
       ProcessInstruction(instruction);
-      // TODO: Add assert
+      assert(instruction->GetOperands().size() == 1 &&
+             "Operand size for OpExtInstImport should be equal to 1 ");
       stream_ << quote_
               << GetSPIRVContext()->LookUpForLiteral(
                      instruction->GetOperands()[0].GetId())
@@ -327,12 +402,10 @@ class IRPrinter : public IRVisitor {
   void ProcessPointerTypeOp(Instruction *instruction) {
     stream_ << ident_ << instruction->GetResultId() << white_space_ << assign_
             << white_space_ << instruction->GetStringOpCode() << white_space_;
-    // TODO: Add asserts
-    if (instruction->GetOperands().size()) {
-      Operand op = instruction->GetOperands()[0];
-      stream_ << GetSPIRVContext()->LookUpForLiteral(op.GetId())
-              << white_space_;
-    }
+    assert(instruction->GetOperands().size() == 1 &&
+           "Operand size for OpTypePointer should be equal to 1");
+    Operand op = instruction->GetOperands()[0];
+    stream_ << GetSPIRVContext()->LookUpForLiteral(op.GetId()) << white_space_;
     stream_ << ident_ << instruction->GetTypeId() << white_space_;
     stream_ << new_line_;
   }
@@ -585,7 +658,7 @@ class Module {
   }
 
   void CreateEntryPoint(Function *func, spv::Id work_group_id) {
-    // TOOD: Add asserts
+    assert(func && "Function for entry point could not be null");
     std::vector<Operand> operands =
         GetSPIRVContext()->CreateOperandsFromLiterals(
             {"GLCompute", func->GetFunctionName()});
@@ -752,7 +825,7 @@ class IRBuilder {
                                   Operand(continue_block->Label())};
     std::vector<Operand> other_operands =
         GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
-    // TODO: Add assert.
+    assert(other_operands.size());
     operands.push_back(other_operands[0]);
     Instruction *instruction =
         new Instruction(spv::Op::OpLoopMerge, 0, 0, std::move(operands));
