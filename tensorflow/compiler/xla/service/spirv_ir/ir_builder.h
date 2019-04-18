@@ -94,11 +94,12 @@ SPIRVContext *GetSPIRVContext() {
   return context;
 }
 
-class IRVisitor {
- public:
-  IRVisitor() {}
-  virtual ~IRVisitor() {}
-  virtual void Visit(Instruction *instruction) = 0;
+// The class which provides the forward declaration for the Visit method.
+class IRVisitorBase {
+  public:
+   IRVisitorBase() {}
+   virtual ~IRVisitorBase() {}
+   virtual void Visit(Instruction *instruction) = 0;
 };
 
 // Represents an spir-v instruction. Based on section 2.2.1 from spir-v
@@ -136,7 +137,7 @@ class Instruction {
   spv::Id GetResultId() const { return result_id_; }
   spv::Id GetTypeId() const { return type_id_; }
   std::vector<Operand> &GetOperands() { return operands_; }
-  void Accept(IRVisitor *visitor) { visitor->Visit(this); }
+  void Accept(IRVisitorBase *visitor) { visitor->Visit(this); }
 
   std::string GetStringOpCode() {
     switch (op_code_) {
@@ -267,18 +268,15 @@ class Instruction {
   BasicBlock *parent_{nullptr};
 };
 
-class IRPrinter : public IRVisitor {
+class IRVisitor : public IRVisitorBase {
  public:
-  IRPrinter() {}
-  ~IRPrinter() {}
-  // Instruction processing is split based on instruction semantics.
-  // It could make sence, because some instructions have different text layout
-  // than binary form.
-  void Visit(Instruction *instruction) {
+  IRVisitor() {}
+  virtual ~IRVisitor() override {}
+  virtual void Visit(Instruction *instruction) {
     switch (instruction->GetOpCode()) {
       case spv::Op::OpVariable:
       case spv::Op::OpConstant:
-        ProcessVariableOp(instruction);
+        HandleVariableOp(instruction);
         break;
       case spv::Op::OpTypeVoid:
       case spv::Op::OpTypeInt:
@@ -288,17 +286,17 @@ class IRPrinter : public IRVisitor {
       case spv::Op::OpTypeRuntimeArray:
       case spv::Op::OpTypeStruct:
       case spv::Op::OpTypeFunction:
-        ProcessTypeOp(instruction);
+        HandleTypeOp(instruction);
         break;
       case spv::Op::OpTypePointer:
-        ProcessPointerTypeOp(instruction);
+        HandlePointerTypeOp(instruction);
         break;
       case spv::Op::OpFunction:
-        ProcessFunctionOp(instruction);
+        HandleFunctionOp(instruction);
         break;
       case spv::Op::OpLoad:
       case spv::Op::OpStore:
-        ProcessMemAccessOp(instruction);
+        HandleMemAccessOp(instruction);
         break;
       case spv::Op::OpBranch:
       case spv::Op::OpBranchConditional:
@@ -307,15 +305,15 @@ class IRPrinter : public IRVisitor {
       case spv::Op::OpLoopMerge:
       case spv::Op::OpReturn:
       case spv::Op::OpFunctionEnd:
-        ProcessControlFlowOp(instruction);
+        HandleControlFlowOp(instruction);
         break;
       case spv::Op::OpAccessChain:
       case spv::Op::OpInBoundsAccessChain:
-        ProcessAccessChainOp(instruction);
+        HandleAccessChainOp(instruction);
         break;
       case spv::Op::OpDecorate:
       case spv::Op::OpMemberDecorate:
-        ProcessDecorate(instruction);
+        HandleDecorate(instruction);
         break;
       case spv::Op::OpIMul:
       case spv::Op::OpIAdd:
@@ -344,21 +342,44 @@ class IRPrinter : public IRVisitor {
       case spv::Op::OpSLessThanEqual:
       case spv::Op::OpUGreaterThanEqual:
       case spv::Op::OpSGreaterThanEqual:
-        ProcessBinOp(instruction);
+        HandleBinOp(instruction);
         break;
       case spv::Op::OpCapability:
       case spv::Op::OpExtInstImport:
       case spv::Op::OpMemoryModel:
       case spv::Op::OpEntryPoint:
       case spv::Op::OpExecutionMode:
-        ProcessHeaderOp(instruction);
+        HandleHeaderOp(instruction);
         break;
       default:
         break;
     }
   }
+  virtual void HandleHeaderOp(Instruction *instruction) = 0;
+  virtual void HandleVariableOp(Instruction *instruction) = 0;
+  virtual void HandleTypeOp(Instruction *instruction) = 0;
+  virtual void HandlePointerTypeOp(Instruction *instruction) = 0;
+  virtual void HandleFunctionOp(Instruction *instruction) = 0;
+  virtual void HandleMemAccessOp(Instruction *instruction) = 0;
+  virtual void HandleControlFlowOp(Instruction *instruction) = 0;
+  virtual void HandleAccessChainOp(Instruction *instruction) = 0;
+  virtual void HandleBinOp(Instruction *instruction) = 0;
+  virtual void HandleDecorate(Instruction *instruction) = 0;
+};
 
-  void ProcessHeaderOp(Instruction *instruction) {
+class IRPrinter : public IRVisitor {
+ public:
+  IRPrinter() {}
+  ~IRPrinter() override {}
+
+  void Visit(Instruction *instruction) override {
+    IRVisitor::Visit(instruction);
+  }
+
+  // Instruction processing is split based on instruction semantics.
+  // It could make sence, because some instructions have different text layout
+  // than binary form.
+  void HandleHeaderOp(Instruction *instruction) override {
     assert(instruction && "Instruction is nullptr");
     if (instruction->GetOpCode() == spv::Op::OpEntryPoint) {
       unsigned index = 0;
@@ -378,9 +399,9 @@ class IRPrinter : public IRVisitor {
     } else if (instruction->GetOpCode() == spv::Op::OpExecutionMode) {
       stream_ << tab_ << instruction->GetStringOpCode() << white_space_
               << ident_ << instruction->GetResultId() << white_space_;
-      ProcessOperands(instruction->GetOperands());
+      HandleOperands(instruction->GetOperands());
     } else if (instruction->GetOpCode() == spv::Op::OpExtInstImport) {
-      ProcessInstruction(instruction);
+      HandleInstruction(instruction);
       assert(instruction->GetOperands().size() == 1 &&
              "Operand size for OpExtInstImport should be equal to 1 ");
       stream_ << quote_
@@ -388,24 +409,24 @@ class IRPrinter : public IRVisitor {
                      instruction->GetOperands()[0].GetId())
               << quote_ << new_line_;
     } else {
-      ProcessInstruction(instruction);
-      ProcessOperands(instruction->GetOperands());
+      HandleInstruction(instruction);
+      HandleOperands(instruction->GetOperands());
     }
   }
 
-  void ProcessVariableOp(Instruction *instruction) {
-    ProcessInstruction(instruction);
-    ProcessOperands(instruction->GetOperands());
+  void HandleVariableOp(Instruction *instruction) override {
+    HandleInstruction(instruction);
+    HandleOperands(instruction->GetOperands());
   }
 
-  void ProcessTypeOp(Instruction *instruction) {
-    ProcessInstruction(instruction);
-    ProcessOperands(instruction->GetOperands());
+  void HandleTypeOp(Instruction *instruction) override {
+    HandleInstruction(instruction);
+    HandleOperands(instruction->GetOperands());
   }
 
   // The layout is different agaist usual type op.
   // %id = OpTypePointer literal %type_id
-  void ProcessPointerTypeOp(Instruction *instruction) {
+  void HandlePointerTypeOp(Instruction *instruction) override {
     stream_ << ident_ << instruction->GetResultId() << white_space_ << assign_
             << white_space_ << instruction->GetStringOpCode() << white_space_;
     assert(instruction->GetOperands().size() == 1 &&
@@ -416,40 +437,40 @@ class IRPrinter : public IRVisitor {
     stream_ << new_line_;
   }
 
-  void ProcessFunctionOp(Instruction *instruction) {
+  void HandleFunctionOp(Instruction *instruction) override {
     stream_ << ident_ << instruction->GetResultId() << white_space_ << assign_
             << white_space_ << instruction->GetStringOpCode() << white_space_
             << ident_ << instruction->GetTypeId() << white_space_;
-    ProcessOperands(instruction->GetOperands());
+    HandleOperands(instruction->GetOperands());
   }
 
-  void ProcessMemAccessOp(Instruction *instruction) {
-    ProcessInstruction(instruction);
-    ProcessOperands(instruction->GetOperands());
+  void HandleMemAccessOp(Instruction *instruction) override {
+    HandleInstruction(instruction);
+    HandleOperands(instruction->GetOperands());
   }
 
-  void ProcessControlFlowOp(Instruction *instruction) {
-    ProcessInstruction(instruction);
-    ProcessOperands(instruction->GetOperands());
+  void HandleControlFlowOp(Instruction *instruction) override {
+    HandleInstruction(instruction);
+    HandleOperands(instruction->GetOperands());
   }
 
-  void ProcessAccessChainOp(Instruction *instruction) {
-    ProcessInstruction(instruction);
-    ProcessOperands(instruction->GetOperands());
+  void HandleAccessChainOp(Instruction *instruction) override {
+    HandleInstruction(instruction);
+    HandleOperands(instruction->GetOperands());
   }
 
-  void ProcessBinOp(Instruction *instruction) {
-    ProcessInstruction(instruction);
-    ProcessOperands(instruction->GetOperands());
+  void HandleBinOp(Instruction *instruction) override {
+    HandleInstruction(instruction);
+    HandleOperands(instruction->GetOperands());
   }
 
-  void ProcessDecorate(Instruction *instruction) {
+  void HandleDecorate(Instruction *instruction) override {
     stream_ << tab_ << instruction->GetStringOpCode() << white_space_ << ident_
             << instruction->GetResultId() << white_space_;
-    ProcessOperands(instruction->GetOperands());
+    HandleOperands(instruction->GetOperands());
   }
 
-  void ProcessInstruction(Instruction *instruction) {
+  void HandleInstruction(Instruction *instruction) {
     if (instruction->GetResultId()) {
       stream_ << ident_ << instruction->GetResultId() << white_space_ << assign_
               << white_space_;
@@ -462,7 +483,7 @@ class IRPrinter : public IRVisitor {
     }
   }
 
-  void ProcessOperands(const std::vector<Operand> &operands) {
+  void HandleOperands(const std::vector<Operand> &operands) {
     for (auto &op : operands) {
       if (op.IsId()) {
         stream_ << ident_ << op.GetId();
