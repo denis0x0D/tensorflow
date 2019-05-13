@@ -31,16 +31,6 @@ limitations under the License.
 #include "absl/types/span.h"
 #include "tensorflow/compiler/xla/map_util.h"
 #include "tensorflow/compiler/xla/service/buffer_assignment.h"
-#include "tensorflow/compiler/xla/service/cpu/cpu_options.h"
-#include "tensorflow/compiler/xla/service/cpu/cpu_runtime.h"
-#include "tensorflow/compiler/xla/service/cpu/dot_op_emitter.h"
-#include "tensorflow/compiler/xla/service/cpu/elemental_ir_emitter.h"
-#include "tensorflow/compiler/xla/service/cpu/ir_emission_utils.h"
-#include "tensorflow/compiler/xla/service/cpu/ir_function.h"
-#include "tensorflow/compiler/xla/service/cpu/parallel_loop_emitter.h"
-#include "tensorflow/compiler/xla/service/cpu/shape_partition.h"
-#include "tensorflow/compiler/xla/service/cpu/simple_orc_jit.h"
-#include "tensorflow/compiler/xla/service/elemental_ir_emitter.h"
 #include "tensorflow/compiler/xla/service/hlo_casting_utils.h"
 #include "tensorflow/compiler/xla/service/hlo_instruction.h"
 #include "tensorflow/compiler/xla/service/hlo_instructions.h"
@@ -56,207 +46,132 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 
 namespace xla {
-
-namespace {
-// using spirv::AsStringRef;
-// using spirv::IrName;
-// using spirv::SetToFirstInsertPoint;
-}  // namespace
-
 namespace gpu {
 
-SPIRVIrEmitter::SPIRVIrEmitter(
-    const HloModule& hlo_module, const BufferAssignment& assignment,
-    spirv::Module* spirv_module,
-    std::unordered_map<const HloInstruction*, int64> instruction_to_profile_idx,
-    std::unordered_map<const HloComputation*, int64> computation_to_profile_idx,
-    const TargetMachineFeatures* target_machine_features) {}
-}  // namespace gpu
+SPIRVIrEmitter::SPIRVIrEmitter(const HloModule& hlo_module,
+                               const BufferAssignment& assignment,
+                               spirv::Module* spirv_module)
+    : hlo_module_config_(hlo_module.config()), assignment_(assignment) {}
 
 StatusOr<spirv::Function*> SPIRVIrEmitter::EmitComputation(
     HloComputation* computation, const string& function_name_prefix,
-    bool is_top_level_computation,
-    absl::Span<HloInstruction* const> instruction_order) {}
-
-void SPIRVIrEmitter::InitializeIrFunction(const string& function_name) {}
+    absl::Span<HloInstruction* const> instruction_order) {
+  return Unimplemented("EmitComputation for Vulkan is Unimplemented");
+}
 
 SPIRVIrEmitter::~SPIRVIrEmitter() {}
 
-Status SPIRVIrEmitter::HandleBitcast(HloInstruction* bitcast) {}
-
-spirv::Constant* SPIRVIrEmitter::EmitGlobalForLiteral(const Literal& literal) {}
-
-Status SPIRVIrEmitter::EmitConstantGlobals() {}
-
-Status SPIRVIrEmitter::HandleConstant(HloInstruction* constant) {}
-
-Status SPIRVIrEmitter::HandleCopy(HloInstruction* copy) {}
-
-// Calculate the alignment of a buffer allocated for a given primitive type.
-int SPIRVIrEmitter::MinimumAlignmentForPrimitiveType(PrimitiveType primitive_type) {}
-int64 SPIRVIrEmitter::ByteSizeOf(const Shape& shape) const {}
-// Calculate the alignment of a buffer allocated for a given shape.
-int SPIRVIrEmitter::MinimumAlignmentForShape(const Shape& shape) {}
-void SPIRVIrEmitter::AttachAlignmentMetadataForLoad(spirv::LoadInst* load,
-                                               const Shape& shape) {}
-
-void SPIRVIrEmitter::AttachAlignmentMetadataForLoad(spirv::LoadInst* load,
-                                               int64 buffer_size) {}
-
-void SPIRVIrEmitter::AttachDereferenceableMetadataForLoad(spirv::LoadInst* load,
-                                                     const Shape& shape) {}
-
-void SPIRVIrEmitter::AttachDereferenceableMetadataForLoad(spirv::LoadInst* load,
-                                                     int64 buffer_size) {}
-
-Status SPIRVIrEmitter::HandleGetTupleElement(HloInstruction* get_tuple_element) {}
-
-Status SPIRVIrEmitter::HandleSelect(HloInstruction* select) {}
-
-Status SPIRVIrEmitter::HandleTupleSelect(HloInstruction* tuple_select) {}
-
-Status SPIRVIrEmitter::HandleInfeed(HloInstruction* instruction) {}
-
-Status SPIRVIrEmitter::EmitXfeedTransfer(XfeedKind kind, const Shape& shape,
-                                    spirv::Value* program_buffer_address) {}
-
-Status SPIRVIrEmitter::HandleOutfeed(HloInstruction* outfeed) {}
-
-Status SPIRVIrEmitter::HandleSort(HloInstruction* hlo) {}
-
-Status SPIRVIrEmitter::HandleTuple(HloInstruction* tuple) {}
-
-spirv::Value* SPIRVIrEmitter::EmitElementalMap(
-    const HloMapInstruction& map_instr,
-    absl::Span<spirv::Value* const> elemental_operands,
-    absl::string_view name) {}
-
-StatusOr<spirv::Value*> SPIRVIrEmitter::EmitElementalReduceWindow(
-    const HloReduceWindowInstruction* reduce_window,
-    const spirv::ElementGenerator& input_generator,
-    const spirv::IrArray::Index& index) {}
-
-Status SPIRVIrEmitter::HandleReduceWindow(HloInstruction* reduce_window) {}
-
-Status SPIRVIrEmitter::HandleSelectAndScatter(HloInstruction* select_and_scatter) {}
-
-Status SPIRVIrEmitter::HandleDot(HloInstruction* dot) {}
-
-StatusOr<spirv::Value*> SPIRVIrEmitter::EmitElementalConvolution(
-    const HloConvolutionInstruction* convolution,
-    const spirv::ElementGenerator& input_generator,
-    const spirv::ElementGenerator& kernel_generator,
-    const spirv::IrArray::Index& index) {}
-
-Status SPIRVIrEmitter::HandleFft(HloInstruction* fft) {}
-
-Status SPIRVIrEmitter::HandleAllReduce(HloInstruction* crs) {}
-
-Status SPIRVIrEmitter::HandleParameter(HloInstruction* parameter) {}
-
-// Returns true if the relative order of the unreduced dimensions stays the same
-// through the reduce operation.
-static bool ReductionPreservesLayout(const HloInstruction& reduce) {}
-
-SPIRVIrEmitter::ReductionGenerator SPIRVIrEmitter::MatchReductionGenerator(
-    HloComputation* function, string* failure_reason) const {}
-
-SPIRVIrEmitter::ShardedVectorType SPIRVIrEmitter::CreateShardedVectorType(
-    PrimitiveType element_type, unsigned element_count) {}
-
-StatusOr<SPIRVIrEmitter::ShardedVector>
-SPIRVIrEmitter::EmitInnerLoopForVectorizedReduction(
-    const ReductionGenerator& reduction_generator,
-    const spirv::IrArray::Index& output_index,
-    const ShardedVectorType& accumulator_type, HloInstruction* init_value,
-    HloInstruction* arg, absl::Span<const int64> dimensions,
-    unsigned element_alignment) {}
-
-void SPIRVIrEmitter::EmitShardedVectorStore(
-    spirv::Value* store_address,
-    const std::vector<spirv::Value*>& value_to_store, const int alignment,
-    const spirv::IrArray& containing_array) {}
-
-StatusOr<bool> SPIRVIrEmitter::EmitVectorizedReduce(
-    HloInstruction* reduce, HloInstruction* arg, HloInstruction* init_value,
-    absl::Span<const int64> dimensions, HloComputation* function,
-    string* failure_reason) {}
-
-StatusOr<spirv::Value*> SPIRVIrEmitter::EmitElementalReduce(
-    const HloReduceInstruction* reduce,
-    const spirv::ElementGenerator& input_generator,
-    const spirv::ElementGenerator& initial_value_generator,
-    const spirv::IrArray::Index& index) {}
-
+Status SPIRVIrEmitter::HandleBitcast(HloInstruction* bitcast) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleConstant(HloInstruction* constant) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleCopy(HloInstruction* copy) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleGetTupleElement(
+    HloInstruction* get_tuple_element) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleSelect(HloInstruction* select) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleTupleSelect(HloInstruction* tuple_select) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleInfeed(HloInstruction* instruction) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleOutfeed(HloInstruction* outfeed) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleSort(HloInstruction* hlo){
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleTuple(HloInstruction* tuple) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleReduceWindow(HloInstruction* reduce_window) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleSelectAndScatter(
+    HloInstruction* select_and_scatter) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleDot(HloInstruction* dot) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleFft(HloInstruction* fft) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleAllReduce(HloInstruction* crs) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleParameter(HloInstruction* parameter) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
 Status SPIRVIrEmitter::HandleAllToAll(HloInstruction*) {
   return Unimplemented("AllToAll is not implemented for Vulkan.");
 }
-
 Status SPIRVIrEmitter::HandleSend(HloInstruction* send) {
   return Unimplemented("Send is not implemented for Vulkan.");
 }
-
 Status SPIRVIrEmitter::HandleSendDone(HloInstruction* send_done) {
   return Unimplemented("Send-done is not implemented for Vulkan.");
 }
-Status SPIRVIrEmitter::HandleScatter(HloInstruction*) {}
-Status SPIRVIrEmitter::HandleSlice(HloInstruction* slice) {}
+Status SPIRVIrEmitter::HandleScatter(HloInstruction*) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleSlice(HloInstruction* slice) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
 Status SPIRVIrEmitter::HandleDynamicUpdateSlice(
-    HloInstruction* dynamic_update_slice) {}
-Status SPIRVIrEmitter::HandleRecv(HloInstruction* recv) {}
-Status SPIRVIrEmitter::HandleRecvDone(HloInstruction* recv_done) {}
-Status SPIRVIrEmitter::HandlePad(HloInstruction* pad) {}
-Status SPIRVIrEmitter::HandleFusion(HloInstruction* fusion) {}
-Status SPIRVIrEmitter::HandleCall(HloInstruction* call) {}
-Status SPIRVIrEmitter::HandleCustomCall(HloInstruction* custom_call) {}
-Status SPIRVIrEmitter::HandleWhile(HloInstruction* xla_while) {}
-void SPIRVIrEmitter::EmitTransferElements(spirv::Value* target, spirv::Value* source,
-                                     int64 element_count,
-                                     PrimitiveType primitive_type,
-                                     const spirv::IrArray& target_array,
-                                     const spirv::IrArray& source_array) {}
-Status SPIRVIrEmitter::HandleAfterAll(HloInstruction* after_all) {}
-Status SPIRVIrEmitter::HandleAddDependency(HloInstruction* add_dependency) {}
-Status SPIRVIrEmitter::HandleRng(HloInstruction* rng) {}
-Status SPIRVIrEmitter::FinishVisit(HloInstruction* root) {}
-Status SPIRVIrEmitter::Preprocess(HloInstruction* hlo) {}
-Status SPIRVIrEmitter::Postprocess(HloInstruction* hlo) {}
-spirv::IrArray SPIRVIrEmitter::GetIrArrayFor(const HloInstruction* hlo) {}
-std::vector<spirv::IrArray> SPIRVIrEmitter::GetIrArraysForOperandsOf(
-    const HloInstruction* hlo) {}
-spirv::Value* SPIRVIrEmitter::GetEmittedValueFor(const HloInstruction* hlo) {}
-spirv::Type* SPIRVIrEmitter::IrShapeType(const Shape& shape) {}
-spirv::Value* SPIRVIrEmitter::GetProfileCountersArgument() {}
-spirv::Value* SPIRVIrEmitter::GetBufferTableArgument() {}
-spirv::Value* SPIRVIrEmitter::GetExecutableRunOptionsArgument() {}
-spirv::Value* SPIRVIrEmitter::EmitThreadLocalBufferPointer(
-    const BufferAllocation::Slice& slice, const Shape& target_shape) {}
-spirv::Value* SPIRVIrEmitter::EmitGlobalBufferPointer(
-    const BufferAllocation::Slice& slice, const Shape& target_shape) {}
-spirv::Value* SPIRVIrEmitter::EmitBufferPointer(const BufferAllocation::Slice& slice,
-                                           const Shape& target_shape) {}
-Status SPIRVIrEmitter::EmitTargetAddressForOp(const HloInstruction* op) {}
-Status SPIRVIrEmitter::EmitTargetElementLoop(
-    HloInstruction* target_op,
-    const spirv::ElementGenerator& element_generator) {}
-Status SPIRVIrEmitter::EmitTargetElementLoop(
-    HloInstruction* target_op, absl::string_view desc,
-    const spirv::ElementGenerator& element_generator) {}
-Status SPIRVIrEmitter::EmitMemcpy(const HloInstruction& source,
-                             const HloInstruction& destination) {}
-Status SPIRVIrEmitter::ElementTypesSameAndSupported(
-    const HloInstruction& instruction,
-    absl::Span<const HloInstruction* const> operands,
-    absl::Span<const PrimitiveType> supported_types) {}
-Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {}
-spirv::Value* SPIRVIrEmitter::EmitThreadLocalCall(
-    const HloComputation& callee, absl::Span<spirv::Value* const> parameters,
-    absl::string_view name) {}
-
-void SPIRVIrEmitter::EmitGlobalCall(const HloComputation& callee,
-                               absl::string_view name) {}
-spirv::Value* SPIRVIrEmitter::GetBufferForGlobalCallReturnValue(
-    const HloComputation& callee) {}
-
-}  // namespace xla
+    HloInstruction* dynamic_update_slice) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleRecv(HloInstruction* recv) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleRecvDone(HloInstruction* recv_done) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandlePad(HloInstruction* pad) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleFusion(HloInstruction* fusion) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleCall(HloInstruction* call) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleCustomCall(HloInstruction* custom_call) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleWhile(HloInstruction* xla_while) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleAfterAll(HloInstruction* after_all) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleAddDependency(HloInstruction* add_dependency) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::HandleRng(HloInstruction* rng) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::FinishVisit(HloInstruction* root) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::Preprocess(HloInstruction* hlo) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::Postprocess(HloInstruction* hlo) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
+  return Unimplemented("Op is not implemented for Vulkan.");
+}
+int64 SPIRVIrEmitter::ByteSizeOf(const Shape& shape) const { return 0; }
+}  // namespace gpu
 }  // namespace xla
