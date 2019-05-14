@@ -51,15 +51,22 @@ namespace gpu {
 SPIRVIrEmitter::SPIRVIrEmitter(const HloModule& hlo_module,
                                const BufferAssignment& assignment,
                                spirv::Module* spirv_module)
-    : hlo_module_config_(hlo_module.config()), assignment_(assignment) {}
-
-StatusOr<spirv::Function*> SPIRVIrEmitter::EmitComputation(
-    HloComputation* computation, const string& function_name_prefix,
-    absl::Span<HloInstruction* const> instruction_order) {
-  return Unimplemented("EmitComputation for Vulkan is Unimplemented");
+    : hlo_module_config_(hlo_module.config()), assignment_(assignment) {
+  LOG(INFO) << "Create SPIRV IR Emitter";
 }
 
 SPIRVIrEmitter::~SPIRVIrEmitter() {}
+
+Status SPIRVIrEmitter::EmitConstantGlobals() {
+  LOG(INFO) << "SPIRVIrEmitter::EmitGlobals";
+  for (const auto& allocation : assignment_.Allocations()) {
+    LOG(INFO) << allocation.ToString();
+    if (!allocation.is_constant()) {
+      continue;
+    }
+  }
+  return Status::OK();
+}
 
 Status SPIRVIrEmitter::HandleBitcast(HloInstruction* bitcast) {
   return Unimplemented("Op is not implemented for Vulkan.");

@@ -310,24 +310,14 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
 
      spirv::Module vulkan_module("compute_shader");
      SPIRVIrEmitter ir_emitter(*module, *assignment, &vulkan_module);
-     //    TF_RETURN_IF_ERROR(ir_emitter.EmitConstantGlobals());
-     // HloComputation* computation = module->entry_computation();
-     // for (auto embedded_computation :
-     //         computation->MakeEmbeddedComputationsList()) {
-     //    if (embedded_computation->IsFusionComputation()) {
-     //       continue;
-     //     }
-     //     TF_RETURN_IF_ERROR(
-     //        ir_emitter
-     //           .EmitComputation(
-     //              embedded_computation, embedded_computation->name(),
-     //             /*is_top_level_computation=*/false,
-     //            schedule.sequence(embedded_computation).instructions())
-     //       .status());
-     //    }
-     //   const string& entry_point_name = options.entry_point_name();
-     //  ObjectFileData object_file_data(object_file->getBufferStart(),
-     //                                 object_file->getBufferEnd());
+     TF_RETURN_IF_ERROR(ir_emitter.EmitConstantGlobals());
+     HloComputation* computation = module->entry_computation();
+     LOG(INFO) << computation->ToString();
+     TF_RETURN_IF_ERROR(computation->Accept(&ir_emitter));
+
+     // const string& entry_point_name = options.entry_point_name();
+     // ObjectFileData object_file_data(object_file->getBufferStart(),
+     //                                object_file->getBufferEnd());
 
      // TODO: How to create the buffers for Vulkan
      // CreateBufferInfosFromBufferAssignment(*assignment);
