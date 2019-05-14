@@ -924,6 +924,6 @@ class IRBuilder {
   BasicBlock *insert_point_;
   Module *module_;
 };
-}  // namespace spriv
+}  // namespace spirv
 }  // namespace xla
 #endif

@@ -77,6 +77,7 @@ limitations under the License.
 #include "tensorflow/compiler/xla/util.h"
 #include "tensorflow/compiler/xla/xla_data.pb.h"
 #include "tensorflow/core/platform/dynamic_annotations.h"
+#include "tensorflow/compiler/xla/service/gpu/spirv_ir_emitter.h"
 
 namespace xla {
 namespace gpu {
@@ -306,12 +307,9 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
        TF_RETURN_IF_ERROR(protobuf_util::DumpProtoToDirectory(
            proto, xla_dump_optimized_hlo_proto_to, module->name()));
      }
-     // TODO: implement Vulkan Emitter
-     // IrEmitter ir_emitter(*module, *assignment, &llvm_module,
-     //                     std::move(instruction_to_profile_idx),
-     //                    std::move(computation_to_profile_idx),
-     //                   &target_machine_features,
-     //                  /*emit_code_for_msan=*/false);
+
+     spirv::Module vulkan_module("compute_shader");
+     SPIRVIrEmitter ir_emitter(*module, *assignment, &vulkan_module);
      //    TF_RETURN_IF_ERROR(ir_emitter.EmitConstantGlobals());
      // HloComputation* computation = module->entry_computation();
      // for (auto embedded_computation :

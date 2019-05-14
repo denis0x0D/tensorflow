@@ -160,6 +160,21 @@ Status SPIRVIrEmitter::HandleAddDependency(HloInstruction* add_dependency) {
 Status SPIRVIrEmitter::HandleRng(HloInstruction* rng) {
   return Unimplemented("Op is not implemented for Vulkan.");
 }
+Status SPIRVIrEmitter::HandleConcatenate(HloInstruction* concatenate) {
+  return Unimplemented("Op is not implemented");
+}
+Status SPIRVIrEmitter::HandleConvolution(HloInstruction* convolution) {
+  return Unimplemented("Op is not implemented");
+}
+Status SPIRVIrEmitter::HandleReduce(HloInstruction* reduce) {
+  return Unimplemented("Op is not implemented");
+}
+Status SPIRVIrEmitter::HandleDynamicSlice(HloInstruction* dynamic_slice) {
+  return Unimplemented("Op is not implemented");
+}
+Status SPIRVIrEmitter::HandleConditional(HloInstruction* conditional) {
+  return Unimplemented("Op is not implemented");
+}
 Status SPIRVIrEmitter::FinishVisit(HloInstruction* root) {
   return Unimplemented("Op is not implemented for Vulkan.");
 }
@@ -172,6 +187,7 @@ Status SPIRVIrEmitter::Postprocess(HloInstruction* hlo) {
 Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
   return Unimplemented("Op is not implemented for Vulkan.");
 }
+
 int64 SPIRVIrEmitter::ByteSizeOf(const Shape& shape) const { return 0; }
 }  // namespace gpu
 }  // namespace xla
