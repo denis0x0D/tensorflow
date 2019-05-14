@@ -28,6 +28,6 @@ load(
 
 cc_library(
     name = "ir_builder",
-    srcs = [],
+    srcs = ["ir_builder.cc"],
     hdrs = ["ir_builder.h"],
 )
