@@ -58,7 +58,7 @@ SPIRVIrEmitter::SPIRVIrEmitter(const HloModule& hlo_module,
 SPIRVIrEmitter::~SPIRVIrEmitter() {}
 
 Status SPIRVIrEmitter::EmitConstantGlobals() {
-  LOG(INFO) << "SPIRVIrEmitter::EmitGlobals";
+  LOG(INFO) << "SPIRVIrEmitter::EmitGlobals\n";
   for (const auto& allocation : assignment_.Allocations()) {
     LOG(INFO) << allocation.ToString();
     if (!allocation.is_constant()) {
@@ -69,54 +69,57 @@ Status SPIRVIrEmitter::EmitConstantGlobals() {
 }
 
 Status SPIRVIrEmitter::HandleBitcast(HloInstruction* bitcast) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Bitcast Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleConstant(HloInstruction* constant) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Constant Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleCopy(HloInstruction* copy) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Copy Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleGetTupleElement(
     HloInstruction* get_tuple_element) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("GetTupleElement Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleSelect(HloInstruction* select) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Select Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleTupleSelect(HloInstruction* tuple_select) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("TupleSelect Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleInfeed(HloInstruction* instruction) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Infeed Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleOutfeed(HloInstruction* outfeed) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("OutFeed Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleSort(HloInstruction* hlo){
   return Unimplemented("Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleTuple(HloInstruction* tuple) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  LOG(INFO) << tuple->ToString();
+  return Status::OK();
 }
 Status SPIRVIrEmitter::HandleReduceWindow(HloInstruction* reduce_window) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("ReduceWindow Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleSelectAndScatter(
     HloInstruction* select_and_scatter) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("SelectAndScatter Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleDot(HloInstruction* dot) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  LOG(INFO) << dot->ToString();
+  return Status::OK();
 }
 Status SPIRVIrEmitter::HandleFft(HloInstruction* fft) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Fft Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleAllReduce(HloInstruction* crs) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("AllReduce Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleParameter(HloInstruction* parameter) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  LOG(INFO) << parameter->ToString();
+  return Status::OK();
 }
 Status SPIRVIrEmitter::HandleAllToAll(HloInstruction*) {
   return Unimplemented("AllToAll is not implemented for Vulkan.");
@@ -128,71 +131,67 @@ Status SPIRVIrEmitter::HandleSendDone(HloInstruction* send_done) {
   return Unimplemented("Send-done is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleScatter(HloInstruction*) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Scatter Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleSlice(HloInstruction* slice) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Slice Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleDynamicUpdateSlice(
     HloInstruction* dynamic_update_slice) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("DynamicUpdateSlice Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleRecv(HloInstruction* recv) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Recv Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleRecvDone(HloInstruction* recv_done) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("RecvDone Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandlePad(HloInstruction* pad) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Pad Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleFusion(HloInstruction* fusion) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Fusion Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleCall(HloInstruction* call) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Call Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleCustomCall(HloInstruction* custom_call) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("CustomCall Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleWhile(HloInstruction* xla_while) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("While Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleAfterAll(HloInstruction* after_all) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("AfterAll Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleAddDependency(HloInstruction* add_dependency) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("AddDependency Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleRng(HloInstruction* rng) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Unimplemented("Rng Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleConcatenate(HloInstruction* concatenate) {
-  return Unimplemented("Op is not implemented");
+  return Unimplemented("Concatenate Op is not implemented");
 }
 Status SPIRVIrEmitter::HandleConvolution(HloInstruction* convolution) {
-  return Unimplemented("Op is not implemented");
+  return Unimplemented("Convolution Op is not implemented");
 }
 Status SPIRVIrEmitter::HandleReduce(HloInstruction* reduce) {
-  return Unimplemented("Op is not implemented");
+  return Unimplemented("Reduce Op is not implemented");
 }
 Status SPIRVIrEmitter::HandleDynamicSlice(HloInstruction* dynamic_slice) {
-  return Unimplemented("Op is not implemented");
+  return Unimplemented("Dynamic Slice Op is not implemented");
 }
 Status SPIRVIrEmitter::HandleConditional(HloInstruction* conditional) {
-  return Unimplemented("Op is not implemented");
+  return Unimplemented("Conditional Op is not implemented");
 }
 Status SPIRVIrEmitter::FinishVisit(HloInstruction* root) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Status::OK();
 }
-Status SPIRVIrEmitter::Preprocess(HloInstruction* hlo) {
-  return Unimplemented("Op is not implemented for Vulkan.");
-}
-Status SPIRVIrEmitter::Postprocess(HloInstruction* hlo) {
-  return Unimplemented("Op is not implemented for Vulkan.");
-}
+Status SPIRVIrEmitter::Preprocess(HloInstruction* hlo) { return Status::OK(); }
+Status SPIRVIrEmitter::Postprocess(HloInstruction* hlo) { return Status::OK(); }
 Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
-  return Unimplemented("Op is not implemented for Vulkan.");
+  return Status::OK();
 }
 
 int64 SPIRVIrEmitter::ByteSizeOf(const Shape& shape) const { return 0; }
