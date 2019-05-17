@@ -219,8 +219,13 @@ class Module {
   spv::Id CreateCustomType(spv::Op type_code, spv::Id type_id);
   spv::Id CreateCustomType(spv::Op type_code, spv::Id type_id,
                            std::vector<std::string> literals);
+  spv::Id CreateCustomTypeLen(spv::Op type_code, spv::Id type_id,
+                              std::vector<Operand> member_types);
   spv::Id CreateGlobalVariable(spv::Id type_id, bool is_constant,
-                               std::vector<std::string> literals);
+                               std::vector<std::string> literals,
+                               spv::Id initializer = 0);
+  spv::Id CreateConstantComposite(spv::Id type_id,
+                                  std::vector<Operand> consituents);
   Function *GetOrCreateFunction(std::string name, spv::Id ret_type,
                                 spv::Id func_type,
                                 std::string function_control);
@@ -230,8 +235,7 @@ class Module {
   std::string module_name_;
   std::vector<Instruction *> header_;
   std::vector<Instruction *> decoration_table_;
-  std::vector<Instruction *> user_types_table_;
-  std::vector<Instruction *> user_var_table_;
+  std::vector<Instruction *> user_vars_types_table_;
 };
 
 // Class which builds the IR.

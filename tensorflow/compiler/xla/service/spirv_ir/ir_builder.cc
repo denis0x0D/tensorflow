@@ -90,6 +90,8 @@ std::string Instruction::GetStringOpCode() {
       return "OpVariable";
     case spv::Op::OpConstant:
       return "OpConstant";
+    case spv::Op::OpConstantComposite:
+      return "OpConstantComposite";
     case spv::Op::OpTypeVoid:
       return "OpTypeVoid";
     case spv::Op::OpTypeInt:
@@ -106,6 +108,8 @@ std::string Instruction::GetStringOpCode() {
       return "OpTypeRuntimeArray";
     case spv::Op::OpTypeStruct:
       return "OpTypeStruct";
+    case spv::Op::OpTypeArray:
+      return "OpTypeArray";
     case spv::Op::OpTypeVector:
       return "OpTypeVector";
     case spv::Op::OpLoad:
@@ -209,6 +213,7 @@ void IRVisitor::Visit(Instruction *instruction) {
   switch (instruction->GetOpCode()) {
     case spv::Op::OpVariable:
     case spv::Op::OpConstant:
+    case spv::Op::OpConstantComposite:
       HandleVariableOp(instruction);
       break;
     case spv::Op::OpTypeVoid:
@@ -219,6 +224,7 @@ void IRVisitor::Visit(Instruction *instruction) {
     case spv::Op::OpTypeRuntimeArray:
     case spv::Op::OpTypeStruct:
     case spv::Op::OpTypeFunction:
+    case spv::Op::OpTypeArray:
       HandleTypeOp(instruction);
       break;
     case spv::Op::OpTypePointer:
@@ -438,10 +444,7 @@ Module::~Module() {
   for (auto *dec : decoration_table_) {
     delete dec;
   }
-  for (auto *type : user_types_table_) {
-    delete type;
-  }
-  for (auto *var : user_var_table_) {
+  for (auto *var : user_vars_types_table_) {
     delete var;
   }
 
@@ -466,12 +469,8 @@ void Module::Accept(IRVisitor *visitor) {
   for (auto *dec : decoration_table_) {
     visitor->Visit(dec);
   }
-  // Visit custom types.
-  for (auto *type : user_types_table_) {
-    visitor->Visit(type);
-  }
-  // Visit variables.
-  for (auto *var : user_var_table_) {
+  // Visit variables and types.
+  for (auto *var : user_vars_types_table_) {
     visitor->Visit(var);
   }
 
@@ -554,19 +553,38 @@ spv::Id Module::CreateCustomType(spv::Op type_code, spv::Id type_id,
       GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
   Instruction *instruction =
       new Instruction(type_code, id, type_id, std::move(operands));
-  user_types_table_.push_back(instruction);
+  user_vars_types_table_.push_back(instruction);
+  return id;
+}
+
+spv::Id Module::CreateCustomTypeLen(spv::Op type_code, spv::Id type_id,
+                                    std::vector<Operand> member_types) {
+  spv::Id id = GetSPIRVContext()->GetUniqueId();
+  Instruction *instruction =
+      new Instruction(type_code, id, type_id, std::move(member_types));
+  user_vars_types_table_.push_back(instruction);
   return id;
 }
 
 spv::Id Module::CreateGlobalVariable(spv::Id type_id, bool is_constant,
-                                     std::vector<std::string> literals) {
+                                     std::vector<std::string> literals,
+                                     spv::Id initializer) {
   spv::Id id = GetSPIRVContext()->GetUniqueId();
   std::vector<Operand> operands =
       GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
+  if (initializer) operands.push_back(Operand(initializer));
   Instruction *instruction =
       new Instruction(!is_constant ? spv::Op::OpVariable : spv::Op::OpConstant,
                       id, type_id, std::move(operands));
-  user_var_table_.push_back(instruction);
+  user_vars_types_table_.push_back(instruction);
+  return id;
+}
+
+spv::Id Module::CreateConstantComposite(spv::Id type_id, std::vector<Operand> operands) {
+  spv::Id id = GetSPIRVContext()->GetUniqueId();
+  Instruction *instruction = new Instruction(spv::Op::OpConstantComposite, id,
+                                             type_id, std::move(operands));
+  user_vars_types_table_.push_back(instruction);
   return id;
 }
 
