@@ -59,11 +59,22 @@ SPIRVIrEmitter::~SPIRVIrEmitter() {}
 
 Status SPIRVIrEmitter::EmitConstantGlobals() {
   LOG(INFO) << "SPIRVIrEmitter::EmitGlobals\n";
-  for (const auto& allocation : assignment_.Allocations()) {
+  for (const BufferAllocation& allocation : assignment_.Allocations()) {
     LOG(INFO) << allocation.ToString();
     if (!allocation.is_constant()) {
       continue;
     }
+
+    //  const Literal& literal =
+    //  llvm_ir::LiteralForConstantAllocation(allocation);
+    // llvm::Constant* global_for_const;
+    // auto it = emitted_literals_.find(&literal);
+    // if (it != emitted_literals_.end()) {
+    //  global_for_const = it->second;
+    // } else {
+    //  global_for_const = EmitGlobalForLiteral(literal);
+    //   InsertOrDie(&emitted_literals_, &literal, global_for_const);
+    // }
   }
   return Status::OK();
 }
@@ -118,7 +129,6 @@ Status SPIRVIrEmitter::HandleAllReduce(HloInstruction* crs) {
   return Unimplemented("AllReduce Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleParameter(HloInstruction* parameter) {
-  LOG(INFO) << parameter->ToString();
   return Status::OK();
 }
 Status SPIRVIrEmitter::HandleAllToAll(HloInstruction*) {

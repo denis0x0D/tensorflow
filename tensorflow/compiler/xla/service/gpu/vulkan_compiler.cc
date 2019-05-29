@@ -271,17 +271,8 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
 
   for (size_t i = 0; i < modules.size(); ++i) {
     HloModule* module = modules[i].get();
-    LOG(INFO) << "Compiling ahead-of-time: " << module->name();
-
-    LOG(INFO) << "Before optimization:";
-    XLA_VLOG_LINES(2, module->ToString());
-
     TF_RETURN_IF_ERROR(RunHloPasses(module, /*is_aot_compile=*/true));
-
-    LOG(INFO) << "After optimization:";
-    LOG(INFO) << module->ToString();
     XLA_VLOG_LINES(2, module->ToString());
-
     TF_ASSIGN_OR_RETURN(HloSchedule schedule,
                         ScheduleModule(module, BufferSizeBytesFunction()));
 
@@ -299,6 +290,9 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
     // BufferAssignment::ToString() includes a header, so no need for us to
     // print one ourselves.
     XLA_VLOG_LINES(2, assignment->ToString());
+
+    LOG(INFO) << "BufferAssignment : ";
+    LOG(INFO) << assignment->ToString();
 
     const string xla_dump_optimized_hlo_proto_to =
         module->config().debug_options().xla_dump_optimized_hlo_proto_to();
