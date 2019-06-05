@@ -272,7 +272,7 @@ int main(int argc, const char *const argv[]) {
 
     vkGetPhysicalDeviceMemoryProperties(physicalDevices[i], &properties);
 
-    const size_t K = 1280;
+    const size_t K = 128;
     const int32_t bufferLength = K * K;
     const uint32_t bufferSize = sizeof(int32_t) * bufferLength;
 

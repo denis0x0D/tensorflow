@@ -24,31 +24,18 @@ int main() {
       module->CreateCustomType(spv::Op::OpTypePointer, v3_int, {"Input"});
   spv::Id int_ptr_type =
       module->CreateCustomType(spv::Op::OpTypePointer, int_32_t, {"Function"});
-  spv::Id runtime_arr =
-      module->CreateCustomType(spv::Op::OpTypeRuntimeArray, int_32_t);
-  spv::Id struct_10 =
-      module->CreateCustomType(spv::Op::OpTypeStruct, runtime_arr);
-  spv::Id ptr_uniform_struct_10 =
-      module->CreateCustomType(spv::Op::OpTypePointer, struct_10, {"Uniform"});
-
   // Constants
   spv::Id int_0 = module->CreateGlobalVariable(int_32_t, true, {"0"});
   spv::Id int_1 = module->CreateGlobalVariable(int_32_t, true, {"1"});
   spv::Id int_128 = module->CreateGlobalVariable(int_32_t, true, {"128"});
   spv::Id int_2 = module->CreateGlobalVariable(int_32_t, true, {"2"});
 
-  spv::Id array_type =
+  spv::Id runtime_arr =
       module->CreateCustomTypeLen(spv::Op::OpTypeArray, int_32_t, {int_128});
-  spv::Id array_ptr_type =
-      module->CreateCustomType(spv::Op::OpTypePointer, array_type, {"Uniform"});
-  spv::Id array_variable =
-      module->CreateGlobalVariable(array_ptr_type, false, {"Uniform"}, int_0);
-  spv::Id array_type_2 =
-      module->CreateCustomTypeLen(spv::Op::OpTypeArray, int_32_t, {int_2});
-
-  spv::Id constant_array_2 =
-      module->CreateConstantComposite(array_type_2, {int_1, int_1});
-
+  spv::Id struct_10 =
+      module->CreateCustomType(spv::Op::OpTypeStruct, runtime_arr);
+  spv::Id ptr_uniform_struct_10 =
+      module->CreateCustomType(spv::Op::OpTypePointer, struct_10, {"Uniform"});
   // Variables
   // Tensor A
   spv::Id input_array1 =
