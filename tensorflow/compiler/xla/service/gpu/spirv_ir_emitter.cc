@@ -1,4 +1,4 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -51,7 +51,11 @@ namespace gpu {
 SPIRVIrEmitter::SPIRVIrEmitter(const HloModule& hlo_module,
                                const BufferAssignment& assignment,
                                spirv::Module* spirv_module)
-    : hlo_module_config_(hlo_module.config()), assignment_(assignment) {
+    : hlo_module_config_(hlo_module.config()),
+      assignment_(assignment),
+      module_(spirv_module) {
+  spirv::BasicBlock* entry = new spirv::BasicBlock("entry");
+  b_ = new spirv::IRBuilder(entry, module_);
   LOG(INFO) << "Create SPIRV IR Emitter";
   spirv_module->InitHeader();
 }
@@ -96,7 +100,7 @@ Status SPIRVIrEmitter::EmitGlobalAllocations() {
 
 Status SPIRVIrEmitter::EmitGlobalAllocation(
     const BufferAllocation& allocation) {
-  return Status::OK();
+  // Create global array using ir builder and add it to hash map.
 }
 
 Status SPIRVIrEmitter::HandleBitcast(HloInstruction* bitcast) {
