@@ -53,10 +53,13 @@ SPIRVIrEmitter::SPIRVIrEmitter(const HloModule& hlo_module,
                                spirv::Module* spirv_module)
     : hlo_module_config_(hlo_module.config()), assignment_(assignment) {
   LOG(INFO) << "Create SPIRV IR Emitter";
+  spirv_module->InitHeader();
 }
 
 SPIRVIrEmitter::~SPIRVIrEmitter() {}
 
+// TODO: Implement constants generations into spir-v.
+// From high-level view it should be a OpConstantComposite.
 Status SPIRVIrEmitter::EmitConstantGlobals() {
   LOG(INFO) << "SPIRVIrEmitter::EmitGlobals\n";
   for (const BufferAllocation& allocation : assignment_.Allocations()) {
@@ -76,6 +79,23 @@ Status SPIRVIrEmitter::EmitConstantGlobals() {
     //   InsertOrDie(&emitted_literals_, &literal, global_for_const);
     // }
   }
+  return Status::OK();
+}
+
+Status SPIRVIrEmitter::EmitGlobalAllocations() {
+  LOG(INFO) << "EmitGlobalAllocations";
+
+  for (const auto& allocation : assignment_.Allocations()) {
+    if (allocation.is_constant()) {
+      continue;
+    }
+    TF_RETURN_IF_ERROR(EmitGlobalAllocation(allocation));
+  }
+  return Status::OK();
+}
+
+Status SPIRVIrEmitter::EmitGlobalAllocation(
+    const BufferAllocation& allocation) {
   return Status::OK();
 }
 
@@ -129,6 +149,8 @@ Status SPIRVIrEmitter::HandleAllReduce(HloInstruction* crs) {
   return Unimplemented("AllReduce Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleParameter(HloInstruction* parameter) {
+  // TODO: Generate a pointer to the global buffer.
+  LOG(INFO) << "Handle paranemeter";
   return Status::OK();
 }
 Status SPIRVIrEmitter::HandleAllToAll(HloInstruction*) {
@@ -203,7 +225,8 @@ Status SPIRVIrEmitter::Postprocess(HloInstruction* hlo) { return Status::OK(); }
 Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
   return Status::OK();
 }
-
-int64 SPIRVIrEmitter::ByteSizeOf(const Shape& shape) const { return 0; }
+int64 SPIRVIrEmitter::ByteSizeOf(const Shape& shape) const {
+  return ShapeUtil::ByteSizeOf(shape, sizeof(void*));
+}
 }  // namespace gpu
 }  // namespace xla

@@ -54,6 +54,8 @@ class SPIRVIrEmitter : public DfsHloVisitorWithDefault {
                  spirv::Module* spirv_module);
   ~SPIRVIrEmitter() override;
   Status EmitConstantGlobals();
+  Status EmitGlobalAllocations();
+  Status EmitGlobalAllocation(const BufferAllocation& allocation);
   StatusOr<spirv::Function*> EmitComputation(
       HloComputation* computation, const string& function_name_prefix,
       absl::Span<HloInstruction* const> instruction_order);

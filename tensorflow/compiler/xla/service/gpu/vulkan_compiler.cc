@@ -302,8 +302,10 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
            proto, xla_dump_optimized_hlo_proto_to, module->name()));
      }
 
-     spirv::Module vulkan_module("compute_shader");
+     spirv::Module vulkan_module("compute_kernel");
      SPIRVIrEmitter ir_emitter(*module, *assignment, &vulkan_module);
+     // At first we have to emit global allocations
+     TF_RETURN_IF_ERROR(ir_emitter.EmitGlobalAllocations());
      TF_RETURN_IF_ERROR(ir_emitter.EmitConstantGlobals());
      HloComputation* computation = module->entry_computation();
      LOG(INFO) << computation->ToString();
