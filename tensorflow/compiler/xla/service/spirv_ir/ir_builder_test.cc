@@ -11,48 +11,56 @@ int main() {
   module->InitHeader();
 
   // Types.
-  spv::Id int_32_t =
-      module->CreateCustomType(spv::Op::OpTypeInt, 0, {"32", "1"});
-  spv::Id uint_32_t =
-      module->CreateCustomType(spv::Op::OpTypeInt, 0, {"32", "0"});
-  spv::Id void_t = module->CreateCustomType(spv::Op::OpTypeVoid, 0);
-  spv::Id bool_t = module->CreateCustomType(spv::Op::OpTypeBool, 0);
-  spv::Id func_type = module->CreateCustomType(spv::Op::OpTypeFunction, void_t);
-  spv::Id v3_int =
-      module->CreateCustomType(spv::Op::OpTypeVector, int_32_t, {"3"});
-  spv::Id ptr_input_v3int =
-      module->CreateCustomType(spv::Op::OpTypePointer, v3_int, {"Input"});
-  spv::Id int_ptr_type =
-      module->CreateCustomType(spv::Op::OpTypePointer, int_32_t, {"Function"});
-  // Constants
-  spv::Id int_0 = module->CreateGlobalVariable(int_32_t, true, {"0"});
-  spv::Id int_1 = module->CreateGlobalVariable(int_32_t, true, {"1"});
-  spv::Id int_128 = module->CreateGlobalVariable(int_32_t, true, {"128"});
-  spv::Id int_2 = module->CreateGlobalVariable(int_32_t, true, {"2"});
+  // BasicTypes.
+  spv::Id int_32_t = module->GetOrCreateInt32TypeId();
+  spv::Id uint_32_t = module->GetOrCreateUInt32TypeId();
+  spv::Id void_t = module->GetOrCreateVoidTypeId();
+  spv::Id bool_t = module->GetOrCreateBoolTypeId();
+  spv::Id func_type =
+      module->GetOrCreateCustomType(spv::Op::OpTypeFunction, void_t, "func_type");
 
-  spv::Id runtime_arr =
-      module->CreateCustomTypeLen(spv::Op::OpTypeArray, int_32_t, {int_128});
-  spv::Id struct_10 =
-      module->CreateCustomType(spv::Op::OpTypeStruct, runtime_arr);
-  spv::Id ptr_uniform_struct_10 =
-      module->CreateCustomType(spv::Op::OpTypePointer, struct_10, {"Uniform"});
+  // Composite types.
+  spv::Id v3_int = module->GetOrCreateCustomType(spv::Op::OpTypeVector, int_32_t,
+                                            {"3"}, "v3_int");
+  spv::Id ptr_input_v3int = module->GetOrCreateCustomType(
+      spv::Op::OpTypePointer, v3_int, {"Input"}, "ptr_input_v3int");
+  spv::Id int_ptr_type = module->GetOrCreateCustomType(
+      spv::Op::OpTypePointer, int_32_t, {"Function"}, "int_ptr_type");
+
+  // Constants
+  spv::Id int_0 = module->GetOrCreateGlobalVariable(int_32_t, true, {"0"}, "int_0");
+  spv::Id int_1 =
+      module->GetOrCreateGlobalVariable(int_32_t, true, {"1"}, "int_1");
+  spv::Id int_128 =
+      module->GetOrCreateGlobalVariable(int_32_t, true, {"128"}, "int_128");
+  spv::Id int_2 =
+      module->GetOrCreateGlobalVariable(int_32_t, true, {"2"}, "int_2");
+
+  // Composite types Array and Struct
+  spv::Id runtime_arr = module->GetOrCreateCustomTypeLen(
+      spv::Op::OpTypeArray, int_32_t, {int_128}, "runtime_arr");
+  spv::Id struct_10 = module->GetOrCreateCustomType(spv::Op::OpTypeStruct,
+                                                    runtime_arr, "struct_10");
+  spv::Id ptr_uniform_struct_10 = module->GetOrCreateCustomType(
+      spv::Op::OpTypePointer, struct_10, {"Uniform"}, "ptr_uniform_struct_10");
+
   // Variables
   // Tensor A
-  spv::Id input_array1 =
-      module->CreateGlobalVariable(ptr_uniform_struct_10, false, {"Uniform"});
+  spv::Id input_array1 = module->GetOrCreateGlobalVariable(
+      ptr_uniform_struct_10, false, {"Uniform"}, "inputr_array_1");
   // Tensor B
-  spv::Id input_array2 =
-      module->CreateGlobalVariable(ptr_uniform_struct_10, false, {"Uniform"});
-  // Tensor C 
-  spv::Id input_array3 =
-      module->CreateGlobalVariable(ptr_uniform_struct_10, false, {"Uniform"});
+  spv::Id input_array2 = module->GetOrCreateGlobalVariable(
+      ptr_uniform_struct_10, false, {"Uniform"}, "input_array2");
+  // Tensor C
+  spv::Id input_array3 = module->GetOrCreateGlobalVariable(
+      ptr_uniform_struct_10, false, {"Uniform"}, "input_array3");
 
-  spv::Id global_invoc_id =
-      module->CreateGlobalVariable(ptr_input_v3int, false, {"Input"});
-  spv::Id ptr_uniform_int =
-      module->CreateCustomType(spv::Op::OpTypePointer, int_32_t, {"Uniform"});
-  spv::Id ptr_input_int =
-      module->CreateCustomType(spv::Op::OpTypePointer, int_32_t, {"Input"});
+  spv::Id global_invoc_id = module->GetOrCreateGlobalVariable(
+      ptr_input_v3int, false, {"Input"}, "global_invoc_id");
+  spv::Id ptr_uniform_int = module->GetOrCreateCustomType(
+      spv::Op::OpTypePointer, int_32_t, {"Uniform"}, "ptr_uniform_int");
+  spv::Id ptr_input_int = module->GetOrCreateCustomType(
+      spv::Op::OpTypePointer, int_32_t, {"Input"}, "ptr_input_int");
 
   // Decorate
   module->Decorate(runtime_arr, {"ArrayStride", "4"});

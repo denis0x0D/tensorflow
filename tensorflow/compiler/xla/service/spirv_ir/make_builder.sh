@@ -1,1 +1,1 @@
-g++ -o ir_builder ir_builder.cc -c
+g++ -o ir_builder ir_builder.cc -c -Werror -Wextra

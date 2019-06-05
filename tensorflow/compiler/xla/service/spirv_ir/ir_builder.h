@@ -95,9 +95,9 @@ class Instruction {
   ~Instruction();
 
   void AddOperand(spv::Id operand_id, bool is_id = true);
-  spv::Op GetOpCode() const ;
+  spv::Op GetOpCode() const;
   spv::Id GetResultId() const;
-  spv::Id GetTypeId() const ;
+  spv::Id GetTypeId() const;
   std::vector<Operand> &GetOperands();
   void Accept(IRVisitorBase *visitor);
   std::string GetStringOpCode();
@@ -216,26 +216,40 @@ class Module {
                            std::vector<std::string> local_sizes);
   void Decorate(spv::Id target_id, std::vector<std::string> literals);
   void MemberDecorate(spv::Id struct_type, std::vector<std::string> literals);
-  spv::Id CreateCustomType(spv::Op type_code, spv::Id type_id);
-  spv::Id CreateCustomType(spv::Op type_code, spv::Id type_id,
-                           std::vector<std::string> literals);
-  spv::Id CreateCustomTypeLen(spv::Op type_code, spv::Id type_id,
-                              std::vector<Operand> member_types);
-  spv::Id CreateGlobalVariable(spv::Id type_id, bool is_constant,
-                               std::vector<std::string> literals,
-                               spv::Id initializer = 0);
-  spv::Id CreateConstantComposite(spv::Id type_id,
-                                  std::vector<Operand> consituents);
+  spv::Id GetOrCreateCustomType(spv::Op type_code, spv::Id type_id,
+                                std::string type_name);
+  spv::Id GetOrCreateCustomType(spv::Op type_code, spv::Id type_id,
+                                std::vector<std::string> literals,
+                                std::string type_name);
+  spv::Id GetOrCreateCustomTypeLen(spv::Op type_code, spv::Id type_id,
+                                   std::vector<Operand> member_types,
+                                   std::string type_name);
+  spv::Id GetOrCreateGlobalVariable(spv::Id type_id, bool is_constant,
+                                    std::vector<std::string> literals,
+                                    std::string global_var_name,
+                                    spv::Id initializer = 0);
+  spv::Id GetOrCreateConstantComposite(spv::Id type_id,
+                                       std::vector<Operand> consituents,
+                                       std::string constant_name);
   Function *GetOrCreateFunction(std::string name, spv::Id ret_type,
                                 spv::Id func_type,
                                 std::string function_control);
+
+  spv::Id GetOrCreateInt32TypeId();
+  spv::Id GetOrCreateUInt32TypeId();
+  spv::Id GetOrCreateFloat32TypeId();
+  spv::Id GetOrCreateFloat64TypeId();
+  spv::Id GetOrCreateInt64TypeId();
+  spv::Id GetOrCreateUInt64TypeId();
+  spv::Id GetOrCreateVoidTypeId();
+  spv::Id GetOrCreateBoolTypeId();
 
  private:
   std::unordered_map<std::string, Function *> functions_;
   std::string module_name_;
   std::vector<Instruction *> header_;
   std::vector<Instruction *> decoration_table_;
-  std::vector<Instruction *> user_vars_types_table_;
+  std::unordered_map<std::string, Instruction *> user_vars_types_table_;
 };
 
 // Class which builds the IR.

@@ -444,8 +444,8 @@ Module::~Module() {
   for (auto *dec : decoration_table_) {
     delete dec;
   }
-  for (auto *var : user_vars_types_table_) {
-    delete var;
+  for (auto &var : user_vars_types_table_) {
+    delete var.second;
   }
 
   // So, at this moment just process the array and free the
@@ -470,8 +470,8 @@ void Module::Accept(IRVisitor *visitor) {
     visitor->Visit(dec);
   }
   // Visit variables and types.
-  for (auto *var : user_vars_types_table_) {
-    visitor->Visit(var);
+  for (auto &var : user_vars_types_table_) {
+    visitor->Visit(var.second);
   }
 
   for (auto &table_instance : functions_) {
@@ -542,33 +542,80 @@ void Module::MemberDecorate(spv::Id struct_type,
   decoration_table_.push_back(instruction);
 }
 
-spv::Id Module::CreateCustomType(spv::Op type_code, spv::Id type_id) {
-  return CreateCustomType(type_code, type_id, {});
+spv::Id Module::GetOrCreateInt32TypeId() {
+  return GetOrCreateCustomType(spv::Op::OpTypeInt, 0, {"32", "1"},
+                               "Int32TypeId");
 }
 
-spv::Id Module::CreateCustomType(spv::Op type_code, spv::Id type_id,
-                                 std::vector<std::string> literals) {
+spv::Id Module::GetOrCreateUInt32TypeId() {
+  return GetOrCreateCustomType(spv::Op::OpTypeInt, 0, {"32", "0"},
+                               "UInt32TypeId");
+}
+
+spv::Id Module::GetOrCreateFloat32TypeId() {
+  return GetOrCreateCustomType(spv::Op::OpTypeFloat, 0, {"32"},
+                               "Float32TypeId");
+}
+
+spv::Id Module::GetOrCreateFloat64TypeId() {
+  return GetOrCreateCustomType(spv::Op::OpTypeFloat, 0, {"64"},
+                               "Float64TypeId");
+}
+
+spv::Id Module::GetOrCreateVoidTypeId() {
+  return GetOrCreateCustomType(spv::Op::OpTypeVoid, 0, "VoidTypeId");
+}
+
+spv::Id Module::GetOrCreateBoolTypeId() {
+  return GetOrCreateCustomType(spv::Op::OpTypeBool, 0, "BoolTypeId");
+}
+
+spv::Id Module::GetOrCreateCustomType(spv::Op type_code, spv::Id type_id,
+                                      std::string type_name) {
+  return GetOrCreateCustomType(type_code, type_id, {}, std::move(type_name));
+}
+
+spv::Id Module::GetOrCreateCustomType(spv::Op type_code, spv::Id type_id,
+                                      std::vector<std::string> literals,
+                                      std::string type_name) {
+  auto it = user_vars_types_table_.find(type_name);
+  if (it != user_vars_types_table_.end()) {
+    return it->second->GetResultId();
+  }
+
   spv::Id id = GetSPIRVContext()->GetUniqueId();
   std::vector<Operand> operands =
       GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
   Instruction *instruction =
       new Instruction(type_code, id, type_id, std::move(operands));
-  user_vars_types_table_.push_back(instruction);
+  user_vars_types_table_.insert({type_name, instruction});
   return id;
 }
 
-spv::Id Module::CreateCustomTypeLen(spv::Op type_code, spv::Id type_id,
-                                    std::vector<Operand> member_types) {
+spv::Id Module::GetOrCreateCustomTypeLen(spv::Op type_code, spv::Id type_id,
+                                         std::vector<Operand> member_types,
+                                         std::string type_name) {
+  auto it = user_vars_types_table_.find(type_name);
+  if (it != user_vars_types_table_.end()) {
+    return it->second->GetResultId();
+  }
+
   spv::Id id = GetSPIRVContext()->GetUniqueId();
   Instruction *instruction =
       new Instruction(type_code, id, type_id, std::move(member_types));
-  user_vars_types_table_.push_back(instruction);
+  user_vars_types_table_.insert({type_name, instruction});
   return id;
 }
 
-spv::Id Module::CreateGlobalVariable(spv::Id type_id, bool is_constant,
-                                     std::vector<std::string> literals,
-                                     spv::Id initializer) {
+spv::Id Module::GetOrCreateGlobalVariable(spv::Id type_id, bool is_constant,
+                                          std::vector<std::string> literals,
+                                          std::string global_var_name,
+                                          spv::Id initializer) {
+  auto it = user_vars_types_table_.find(global_var_name);
+  if (it != user_vars_types_table_.end()) {
+    return it->second->GetResultId();
+  }
+
   spv::Id id = GetSPIRVContext()->GetUniqueId();
   std::vector<Operand> operands =
       GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
@@ -576,15 +623,22 @@ spv::Id Module::CreateGlobalVariable(spv::Id type_id, bool is_constant,
   Instruction *instruction =
       new Instruction(!is_constant ? spv::Op::OpVariable : spv::Op::OpConstant,
                       id, type_id, std::move(operands));
-  user_vars_types_table_.push_back(instruction);
+  user_vars_types_table_.insert({global_var_name, instruction});
   return id;
 }
 
-spv::Id Module::CreateConstantComposite(spv::Id type_id, std::vector<Operand> operands) {
+spv::Id Module::GetOrCreateConstantComposite(spv::Id type_id,
+                                             std::vector<Operand> operands,
+                                             std::string constant_name) {
+  auto it = user_vars_types_table_.find(constant_name);
+  if (it != user_vars_types_table_.end()) {
+    return it->second->GetResultId();
+  }
+
   spv::Id id = GetSPIRVContext()->GetUniqueId();
   Instruction *instruction = new Instruction(spv::Op::OpConstantComposite, id,
                                              type_id, std::move(operands));
-  user_vars_types_table_.push_back(instruction);
+  user_vars_types_table_.insert({constant_name, instruction});
   return id;
 }
 
