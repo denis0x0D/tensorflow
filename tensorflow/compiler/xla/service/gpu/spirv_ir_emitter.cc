@@ -99,7 +99,7 @@ Status SPIRVIrEmitter::EmitComputation(
 
   spirv::BasicBlock* entry = new spirv::BasicBlock("entry");
   function->AddEntryBlock(entry);
-
+  computation->AcceptOrdered(this, instruction_order);
   return Status::OK();
 }
 
@@ -189,7 +189,12 @@ Status SPIRVIrEmitter::HandleSelectAndScatter(
   return Unimplemented("SelectAndScatter Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleDot(HloInstruction* dot) {
-  LOG(INFO) << dot->ToString();
+  LOG(INFO) << "handle dot";
+  const HloInstruction* lhs = dot->operand(0);
+  const HloInstruction* rhs = dot->operand(1);
+  TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice slice1,
+                      assignment_.GetUniqueTopLevelSlice(lhs));
+  LOG(INFO) << slice1.ToString();
   return Status::OK();
 }
 Status SPIRVIrEmitter::HandleFft(HloInstruction* fft) {
@@ -270,9 +275,13 @@ Status SPIRVIrEmitter::HandleConditional(HloInstruction* conditional) {
 Status SPIRVIrEmitter::FinishVisit(HloInstruction* root) {
   return Status::OK();
 }
+
 Status SPIRVIrEmitter::Preprocess(HloInstruction* hlo) { return Status::OK(); }
+
 Status SPIRVIrEmitter::Postprocess(HloInstruction* hlo) { return Status::OK(); }
+
 Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
+  LOG(INFO) << "Default action" << hlo->ToString();
   return Status::OK();
 }
 
