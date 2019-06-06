@@ -22,10 +22,10 @@ int main() {
   // Composite types.
   spv::Id v3_int = module->GetOrCreateCustomType(spv::Op::OpTypeVector, int_32_t,
                                             {"3"}, "v3_int");
-  spv::Id ptr_input_v3int = module->GetOrCreateCustomType(
-      spv::Op::OpTypePointer, v3_int, {"Input"}, "ptr_input_v3int");
-  spv::Id int_ptr_type = module->GetOrCreateCustomType(
-      spv::Op::OpTypePointer, int_32_t, {"Function"}, "int_ptr_type");
+  spv::Id ptr_input_v3int =
+      module->GetOrCreatePointerTypeId(v3_int, "Input", "ptr_input_v3int");
+  spv::Id int_ptr_type =
+      module->GetOrCreatePointerTypeId(int_32_t, "Function", "int_ptr_type");
 
   // Constants
   spv::Id int_0 = module->GetOrCreateGlobalVariable(int_32_t, true, {"0"}, "int_0");
@@ -37,12 +37,11 @@ int main() {
       module->GetOrCreateGlobalVariable(int_32_t, true, {"2"}, "int_2");
 
   // Composite types Array and Struct
-  spv::Id runtime_arr = module->GetOrCreateCustomTypeLen(
-      spv::Op::OpTypeArray, int_32_t, {int_128}, "runtime_arr");
-  spv::Id struct_10 = module->GetOrCreateCustomType(spv::Op::OpTypeStruct,
-                                                    runtime_arr, "struct_10");
-  spv::Id ptr_uniform_struct_10 = module->GetOrCreateCustomType(
-      spv::Op::OpTypePointer, struct_10, {"Uniform"}, "ptr_uniform_struct_10");
+  spv::Id runtime_arr =
+      module->GetOrCreateArrayTypeId(int_32_t, int_128, "runtime_arr");
+  spv::Id struct_10 = module->GetOrCreateStructTypeId(runtime_arr, "struct_10");
+  spv::Id ptr_uniform_struct_10 = module->GetOrCreatePointerTypeId(
+      struct_10, "Uniform", "ptr_uniform_struct_10");
 
   // Variables
   // Tensor A
@@ -59,8 +58,8 @@ int main() {
       ptr_input_v3int, false, {"Input"}, "global_invoc_id");
   spv::Id ptr_uniform_int = module->GetOrCreateCustomType(
       spv::Op::OpTypePointer, int_32_t, {"Uniform"}, "ptr_uniform_int");
-  spv::Id ptr_input_int = module->GetOrCreateCustomType(
-      spv::Op::OpTypePointer, int_32_t, {"Input"}, "ptr_input_int");
+  spv::Id ptr_input_int =
+      module->GetOrCreatePointerTypeId(int_32_t, "Input", "ptr_input_int");
 
   // Decorate
   module->Decorate(runtime_arr, {"ArrayStride", "4"});

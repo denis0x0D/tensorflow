@@ -575,6 +575,20 @@ spv::Id Module::GetOrCreateCustomType(spv::Op type_code, spv::Id type_id,
   return GetOrCreateCustomType(type_code, type_id, {}, std::move(type_name));
 }
 
+spv::Id Module::GetOrCreatePointerTypeId(spv::Id type,
+                                         std::string storage_class,
+                                         std::string ptr_type_name) {
+  return GetOrCreateCustomType(spv::Op::OpTypePointer, type,
+                               {std::move(storage_class)},
+                               std::move(ptr_type_name));
+}
+
+spv::Id Module::GetOrCreateArrayTypeId(spv::Id type, spv::Id size,
+                                       std::string name) {
+  return GetOrCreateCustomTypeLen(spv::Op::OpTypeArray, type, {size},
+                                  std::move(name));
+}
+
 spv::Id Module::GetOrCreateCustomType(spv::Op type_code, spv::Id type_id,
                                       std::vector<std::string> literals,
                                       std::string type_name) {
@@ -659,6 +673,16 @@ Function *Module::GetOrCreateFunction(std::string name, spv::Id ret_type,
   function->SetEntryPoint(entry_point);
   functions_.insert({name, function});
   return function;
+}
+
+spv::Id Module::GetOrCreateStructTypeId(spv::Id type, std::string name) {
+  return GetOrCreateCustomType(spv::Op::OpTypeStruct, type, std::move(name));
+}
+
+spv::Id Module::GetOrCreateVectorTypeId(spv::Id type, std::string size,
+                                        std::string name) {
+  return GetOrCreateCustomType(spv::Op::OpTypeVector, type, {std::move(size)},
+                               std::move(name));
 }
 
 BasicBlock::BasicBlock(std::string name) : name_(std::move(name)) {

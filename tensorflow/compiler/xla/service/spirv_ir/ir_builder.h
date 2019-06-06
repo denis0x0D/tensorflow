@@ -243,6 +243,12 @@ class Module {
   spv::Id GetOrCreateUInt64TypeId();
   spv::Id GetOrCreateVoidTypeId();
   spv::Id GetOrCreateBoolTypeId();
+  spv::Id GetOrCreatePointerTypeId(spv::Id type, std::string storage_class,
+                                   std::string ptr_type_name);
+  spv::Id GetOrCreateArrayTypeId(spv::Id type, spv::Id size, std::string name);
+  spv::Id GetOrCreateStructTypeId(spv::Id type, std::string name);
+  spv::Id GetOrCreateVectorTypeId(spv::Id type, std::string size,
+                                  std::string name);
 
  private:
   std::unordered_map<std::string, Function *> functions_;
