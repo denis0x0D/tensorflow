@@ -552,6 +552,16 @@ spv::Id Module::GetOrCreateUInt32TypeId() {
                                "UInt32TypeId");
 }
 
+spv::Id Module::GetOrCreateInt64TypeId() {
+  return GetOrCreateCustomType(spv::Op::OpTypeInt, 0, {"64", "1"},
+                               "Int64TypeId");
+}
+
+spv::Id Module::GetOrCreateUInt64TypeId() {
+  return GetOrCreateCustomType(spv::Op::OpTypeInt, 0, {"64", "0"},
+                               "UInt64TypeId");
+}
+
 spv::Id Module::GetOrCreateFloat32TypeId() {
   return GetOrCreateCustomType(spv::Op::OpTypeFloat, 0, {"32"},
                                "Float32TypeId");

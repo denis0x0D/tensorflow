@@ -95,12 +95,46 @@ Status SPIRVIrEmitter::EmitGlobalAllocations() {
     }
     TF_RETURN_IF_ERROR(EmitGlobalAllocation(allocation));
   }
+
+  spirv::IRPrinter* printer = new spirv::IRPrinter();
+  printer->AddMetaInfo();
+  module_->Accept(printer);
+  printer->Dump();
   return Status::OK();
 }
 
 Status SPIRVIrEmitter::EmitGlobalAllocation(
     const BufferAllocation& allocation) {
   // Create global array using ir builder and add it to hash map.
+  LOG(INFO) << "Create allocaiton for " << allocation.ToString();
+  spv::Id int_64_t = module_->GetOrCreateInt64TypeId();
+  // FIXME: Find out how to get actual buffer type, it should depend on buffer
+  // allocation.
+  spv::Id float_32_t = module_->GetOrCreateFloat32TypeId();
+  std::string allocation_size_str = std::to_string(allocation.size());
+  std::string allocation_size_prefix = "allocation_size";
+  spv::Id allocation_size = module_->GetOrCreateGlobalVariable(
+      int_64_t, true, {allocation_size_str},
+      allocation_size_prefix + allocation_size_str);
+
+  std::string array_type_prefix = "array_type";
+  spv::Id array_type = module_->GetOrCreateArrayTypeId(
+      float_32_t, allocation_size, array_type_prefix + allocation_size_str);
+
+  std::string struct_type_prefix = "struct_type";
+  spv::Id struct_type = module_->GetOrCreateStructTypeId(
+      array_type, struct_type_prefix + array_type_prefix + allocation_size_str);
+  std::string ptr_struct_type_prefix = "ptr_struct";
+  spv::Id ptr_struct_type = module_->GetOrCreatePointerTypeId(
+      struct_type, "Uniform",
+      ptr_struct_type_prefix + array_type_prefix + allocation_size_str);
+  std::string array_prefix = "array_prefix";
+
+  spv::Id array_id = module_->GetOrCreateGlobalVariable(
+      ptr_struct_type, false, {"Uniform"},
+      array_prefix + std::to_string(allocation.index()));
+  allocation_map_.insert({allocation.index(), array_id});
+  return Status::OK();
 }
 
 Status SPIRVIrEmitter::HandleBitcast(HloInstruction* bitcast) {
