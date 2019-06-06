@@ -216,6 +216,8 @@ class Module {
                            std::vector<std::string> local_sizes);
   void Decorate(spv::Id target_id, std::vector<std::string> literals);
   void MemberDecorate(spv::Id struct_type, std::vector<std::string> literals);
+  spv::Id GetOrCreateFunctionTypeId(spv::Id ret_type,
+                                    std::string function_name);
   spv::Id GetOrCreateCustomType(spv::Op type_code, spv::Id type_id,
                                 std::string type_name);
   spv::Id GetOrCreateCustomType(spv::Op type_code, spv::Id type_id,

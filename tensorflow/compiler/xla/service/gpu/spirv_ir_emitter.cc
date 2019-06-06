@@ -90,6 +90,16 @@ Status SPIRVIrEmitter::EmitComputation(
     const HloComputation* computation, const string& function_name,
     bool is_top_level_computation,
     absl::Span<HloInstruction* const> instruction_order) {
+
+  spv::Id void_t = module_->GetOrCreateVoidTypeId();
+  spv::Id function_type = module_->GetOrCreateFunctionTypeId(
+      void_t, std::string("function_type") + function_name);
+  spirv::Function* function = module_->GetOrCreateFunction(
+      function_name, void_t, function_type, "None");
+
+  spirv::BasicBlock* entry = new spirv::BasicBlock("entry");
+  function->AddEntryBlock(entry);
+
   return Status::OK();
 }
 
@@ -102,11 +112,6 @@ Status SPIRVIrEmitter::EmitGlobalAllocations() {
     }
     TF_RETURN_IF_ERROR(EmitGlobalAllocation(allocation));
   }
-
-  spirv::IRPrinter* printer = new spirv::IRPrinter();
-  printer->AddMetaInfo();
-  module_->Accept(printer);
-  printer->Dump();
   return Status::OK();
 }
 

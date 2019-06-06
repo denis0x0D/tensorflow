@@ -16,8 +16,7 @@ int main() {
   spv::Id uint_32_t = module->GetOrCreateUInt32TypeId();
   spv::Id void_t = module->GetOrCreateVoidTypeId();
   spv::Id bool_t = module->GetOrCreateBoolTypeId();
-  spv::Id func_type =
-      module->GetOrCreateCustomType(spv::Op::OpTypeFunction, void_t, "func_type");
+  spv::Id func_type = module->GetOrCreateFunctionTypeId(void_t, "func_type");
 
   // Composite types.
   spv::Id v3_int = module->GetOrCreateCustomType(spv::Op::OpTypeVector, int_32_t,

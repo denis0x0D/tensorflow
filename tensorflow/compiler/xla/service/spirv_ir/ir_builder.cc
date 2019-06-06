@@ -542,6 +542,10 @@ void Module::MemberDecorate(spv::Id struct_type,
   decoration_table_.push_back(instruction);
 }
 
+spv::Id Module::GetOrCreateFunctionTypeId(spv::Id ret_type, std::string name) {
+  return GetOrCreateCustomType(spv::OpTypeFunction, ret_type, std::move(name));
+}
+
 spv::Id Module::GetOrCreateInt32TypeId() {
   return GetOrCreateCustomType(spv::Op::OpTypeInt, 0, {"32", "1"},
                                "Int32TypeId");

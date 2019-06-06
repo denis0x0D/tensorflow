@@ -312,6 +312,11 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
          entry_computation, "compute_kernel", true,
          schedule.sequence(entry_computation).instructions()));
 
+     spirv::IRPrinter* printer = new spirv::IRPrinter();
+     printer->AddMetaInfo();
+     ir_emitter.Module()->Accept(printer);
+     printer->Dump();
+
      // const string& entry_point_name = options.entry_point_name();
      // ObjectFileData object_file_data(object_file->getBufferStart(),
      //                                object_file->getBufferEnd());

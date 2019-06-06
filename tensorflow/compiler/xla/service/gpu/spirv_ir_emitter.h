@@ -60,8 +60,8 @@ class SPIRVIrEmitter : public DfsHloVisitorWithDefault {
                          const string& function_name,
                          bool is_top_level_computation,
                          absl::Span<HloInstruction* const> instruction_order);
-  spirv::IRBuilder* b() { return b_; }
   spirv::IRBuilder* builder() { return b_; }
+  spirv::Module* Module() { return module_; }
  protected:
   Status DefaultAction(HloInstruction* hlo) override;
   Status HandleAllToAll(HloInstruction* instruction) override;
