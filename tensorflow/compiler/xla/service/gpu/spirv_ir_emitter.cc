@@ -86,6 +86,13 @@ Status SPIRVIrEmitter::EmitConstantGlobals() {
   return Status::OK();
 }
 
+Status SPIRVIrEmitter::EmitComputation(
+    const HloComputation* computation, const string& function_name,
+    bool is_top_level_computation,
+    absl::Span<HloInstruction* const> instruction_order) {
+  return Status::OK();
+}
+
 Status SPIRVIrEmitter::EmitGlobalAllocations() {
   LOG(INFO) << "EmitGlobalAllocations";
 

@@ -307,9 +307,10 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
      // At first we have to emit global allocations
      TF_RETURN_IF_ERROR(ir_emitter.EmitGlobalAllocations());
      TF_RETURN_IF_ERROR(ir_emitter.EmitConstantGlobals());
-     HloComputation* computation = module->entry_computation();
-     LOG(INFO) << computation->ToString();
-     TF_RETURN_IF_ERROR(computation->Accept(&ir_emitter));
+     HloComputation* entry_computation = module->entry_computation();
+     TF_RETURN_IF_ERROR(ir_emitter.EmitComputation(
+         entry_computation, "compute_kernel", true,
+         schedule.sequence(entry_computation).instructions()));
 
      // const string& entry_point_name = options.entry_point_name();
      // ObjectFileData object_file_data(object_file->getBufferStart(),
