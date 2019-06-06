@@ -104,6 +104,12 @@ class SPIRVIrEmitter : public DfsHloVisitorWithDefault {
   Status FinishVisit(HloInstruction* root) override;
   Status Preprocess(HloInstruction* hlo) override;
   Status Postprocess(HloInstruction* hlo) override;
+  Status EmitTargetAddressForOp(const HloInstruction* op);
+  spv::Id EmitGlobalBufferPointer(const BufferAllocation::Slice& allocation,
+                                  const Shape& target_shape);
+  spv::Id EmitBufferPointer(const BufferAllocation::Slice& allocation,
+                            const Shape& target_shape);
+
  private:
   const HloModuleConfig& hlo_module_config_;
   // Assignment of the buffers needed by the computation and their shape

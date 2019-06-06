@@ -263,6 +263,29 @@ Status SPIRVIrEmitter::Postprocess(HloInstruction* hlo) { return Status::OK(); }
 Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
   return Status::OK();
 }
+
+Status SPIRVIrEmitter::EmitTargetAddressForOp(const HloInstruction* op) {
+  const Shape& target_shape = op->shape();
+  TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice slice,
+                      assignment_.GetUniqueTopLevelSlice(op));
+  spv::Id addr = EmitBufferPointer(slice, target_shape);
+  emitted_value_[op] = addr;
+}
+
+spv::Id SPIRVIrEmitter::EmitBufferPointer(const BufferAllocation::Slice& slice,
+                                          const Shape& target_shape) {
+  if (slice.allocation()->is_thread_local()) {
+  } else if (slice.allocation()->is_constant()) {
+  } else {
+    return EmitGlobalBufferPointer(slice, target_shape);
+  }
+}
+
+spv::Id SPIRVIrEmitter::EmitGlobalBufferPointer(
+    const BufferAllocation::Slice& slice, const Shape& target_shape) {
+  return 0;
+}
+
 int64 SPIRVIrEmitter::ByteSizeOf(const Shape& shape) const {
   return ShapeUtil::ByteSizeOf(shape, sizeof(void*));
 }
