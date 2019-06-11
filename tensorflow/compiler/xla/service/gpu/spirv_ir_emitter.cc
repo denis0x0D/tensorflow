@@ -197,17 +197,20 @@ Status SPIRVIrEmitter::HandleDot(HloInstruction* dot) {
   LOG(INFO) << slice1.ToString();
   return Status::OK();
 }
+
 Status SPIRVIrEmitter::HandleFft(HloInstruction* fft) {
   return Unimplemented("Fft Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleAllReduce(HloInstruction* crs) {
   return Unimplemented("AllReduce Op is not implemented for Vulkan.");
 }
+
 Status SPIRVIrEmitter::HandleParameter(HloInstruction* parameter) {
   // TODO: Generate a pointer to the global buffer.
   LOG(INFO) << "Handle paranemeter";
   return Status::OK();
 }
+
 Status SPIRVIrEmitter::HandleAllToAll(HloInstruction*) {
   return Unimplemented("AllToAll is not implemented for Vulkan.");
 }
@@ -281,7 +284,17 @@ Status SPIRVIrEmitter::Preprocess(HloInstruction* hlo) { return Status::OK(); }
 Status SPIRVIrEmitter::Postprocess(HloInstruction* hlo) { return Status::OK(); }
 
 Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
-  LOG(INFO) << "Default action" << hlo->ToString();
+  LOG(INFO) << "Default action" << hlo->ToString()
+  /*
+    for (const HloInstruction* operand : hlo->operands()) {
+      operand_to_generator[operand] = [=](const llvm_ir::IrArray::Index& index)
+    { return GetIrArrayFor(operand).EmitReadArrayElement(index, &b_);
+      };
+    }
+    CpuElementalIrEmitter elemental_emitter(hlo_module_config_, this, module_);
+    return EmitTargetElementLoop(
+        hlo, elemental_emitter.MakeElementGenerator(hlo, operand_to_generator));
+  */
   return Status::OK();
 }
 
