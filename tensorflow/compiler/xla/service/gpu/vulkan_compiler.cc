@@ -293,6 +293,8 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
 
     LOG(INFO) << "BufferAssignment : ";
     LOG(INFO) << assignment->ToString();
+    LOG(INFO) << "Computation module : ";
+    LOG(INFO) << module->ToString();
 
     const string xla_dump_optimized_hlo_proto_to =
         module->config().debug_options().xla_dump_optimized_hlo_proto_to();

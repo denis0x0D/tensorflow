@@ -129,10 +129,12 @@ Status SPIRVIrEmitter::EmitGlobalAllocation(
       int_64_t, true, {allocation_size_str},
       allocation_size_prefix + allocation_size_str);
 
+
   std::string array_type_prefix = "array_type";
   spv::Id array_type = module_->GetOrCreateArrayTypeId(
       float_32_t, allocation_size, array_type_prefix + allocation_size_str);
 
+  
   std::string struct_type_prefix = "struct_type";
   spv::Id struct_type = module_->GetOrCreateStructTypeId(
       array_type, struct_type_prefix + array_type_prefix + allocation_size_str);
@@ -146,6 +148,14 @@ Status SPIRVIrEmitter::EmitGlobalAllocation(
       ptr_struct_type, false, {"Uniform"},
       array_prefix + std::to_string(allocation.index()));
   allocation_map_.insert({allocation.index(), array_id});
+
+  // Decorate.
+  module_->Decorate(array_type, {"ArrayStride", "4"});
+  module_->MemberDecorate(struct_type, {"0", "Offset", "0"});
+  module_->Decorate(struct_type, {"BufferBlock"});
+  module_->Decorate(array_id, {"DecriptiorSet", "0"});
+  module_->Decorate(array_id, {"Binding", std::to_string(binding_counter_++)});
+
   return Status::OK();
 }
 
@@ -284,7 +294,7 @@ Status SPIRVIrEmitter::Preprocess(HloInstruction* hlo) { return Status::OK(); }
 Status SPIRVIrEmitter::Postprocess(HloInstruction* hlo) { return Status::OK(); }
 
 Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
-  LOG(INFO) << "Default action" << hlo->ToString()
+  LOG(INFO) << "Default action" << hlo->ToString();
   /*
     for (const HloInstruction* operand : hlo->operands()) {
       operand_to_generator[operand] = [=](const llvm_ir::IrArray::Index& index)
