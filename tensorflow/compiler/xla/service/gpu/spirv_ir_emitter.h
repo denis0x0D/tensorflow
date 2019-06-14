@@ -60,8 +60,10 @@ class SPIRVIrEmitter : public DfsHloVisitorWithDefault {
                          const string& function_name,
                          bool is_top_level_computation,
                          absl::Span<HloInstruction* const> instruction_order);
-  spirv::IRBuilder* builder() { return b_; }
-  spirv::Module* Module() { return module_; }
+  spirv::IRBuilder* SPIRVBuilder() { return b_; }
+  spirv::Module* SPIRVModule() { return module_; }
+  spirv::Function* SPIRVFunction() { return function_; }
+
  protected:
   Status DefaultAction(HloInstruction* hlo) override;
   Status HandleAllToAll(HloInstruction* instruction) override;
@@ -112,6 +114,7 @@ class SPIRVIrEmitter : public DfsHloVisitorWithDefault {
                             const Shape& target_shape);
 
  private:
+  void InitFunction(spv::Id ret_type, std::string function_name);
   const HloModuleConfig& hlo_module_config_;
   // Assignment of the buffers needed by the computation and their shape
   // information.

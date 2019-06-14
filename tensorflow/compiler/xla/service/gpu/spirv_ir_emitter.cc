@@ -55,7 +55,7 @@ SPIRVIrEmitter::SPIRVIrEmitter(const HloModule& hlo_module,
       assignment_(assignment),
       module_(spirv_module) {
   spirv::BasicBlock* entry = new spirv::BasicBlock("entry");
-  b_ = new spirv::IRBuilder(entry, module_);
+  b_ = new spirv::IRBuilder(entry, SPIRVModule());
   LOG(INFO) << "Create SPIRV IR Emitter";
   spirv_module->InitHeader();
 }
@@ -90,15 +90,15 @@ Status SPIRVIrEmitter::EmitComputation(
     const HloComputation* computation, const string& function_name,
     bool is_top_level_computation,
     absl::Span<HloInstruction* const> instruction_order) {
-  spv::Id void_t = module_->GetOrCreateVoidTypeId();
-  spv::Id function_type = module_->GetOrCreateFunctionTypeId(
+  spv::Id void_t = SPIRVModule()->GetOrCreateVoidTypeId();
+  spv::Id function_type = SPIRVModule()->GetOrCreateFunctionTypeId(
       void_t, std::string("function_type") + function_name);
-  function_ = module_->GetOrCreateFunction(function_name, void_t, function_type,
-                                           "None");
+  InitFunction(void_t, function_name);
 
-    spirv::BasicBlock* entry = new spirv::BasicBlock("entry");
-  function_->AddEntryBlock(entry);
-  builder()->SetInsertPoint(entry);
+  spirv::BasicBlock* entry = new spirv::BasicBlock("entry");
+  SPIRVFunction()->AddEntryBlock(entry);
+  SPIRVBuilder()->SetInsertPoint(entry);
+
   computation->AcceptOrdered(this, instruction_order);
   return Status::OK();
 }
@@ -119,42 +119,42 @@ Status SPIRVIrEmitter::EmitGlobalAllocation(
     const BufferAllocation& allocation) {
   // Create global array using ir builder and add it to hash map.
   LOG(INFO) << "Create allocaiton for " << allocation.ToString();
-  spv::Id int_64_t = module_->GetOrCreateInt64TypeId();
+  spv::Id int_64_t = SPIRVModule()->GetOrCreateInt64TypeId();
   // FIXME: Find out how to get actual buffer type, it should depend on buffer
   // allocation.
-  spv::Id float_32_t = module_->GetOrCreateFloat32TypeId();
+  spv::Id float_32_t = SPIRVModule()->GetOrCreateFloat32TypeId();
   std::string allocation_size_str = std::to_string(allocation.size());
   std::string allocation_size_prefix = "allocation_size";
-  spv::Id allocation_size = module_->GetOrCreateGlobalVariable(
+  spv::Id allocation_size = SPIRVModule()->GetOrCreateGlobalVariable(
       int_64_t, true, {allocation_size_str},
       allocation_size_prefix + allocation_size_str);
 
-
   std::string array_type_prefix = "array_type";
-  spv::Id array_type = module_->GetOrCreateArrayTypeId(
+  spv::Id array_type = SPIRVModule()->GetOrCreateArrayTypeId(
       float_32_t, allocation_size, array_type_prefix + allocation_size_str);
 
   
   std::string struct_type_prefix = "struct_type";
-  spv::Id struct_type = module_->GetOrCreateStructTypeId(
+  spv::Id struct_type = SPIRVModule()->GetOrCreateStructTypeId(
       array_type, struct_type_prefix + array_type_prefix + allocation_size_str);
   std::string ptr_struct_type_prefix = "ptr_struct";
-  spv::Id ptr_struct_type = module_->GetOrCreatePointerTypeId(
+  spv::Id ptr_struct_type = SPIRVModule()->GetOrCreatePointerTypeId(
       struct_type, "Uniform",
       ptr_struct_type_prefix + array_type_prefix + allocation_size_str);
   std::string array_prefix = "array_prefix";
 
-  spv::Id array_id = module_->GetOrCreateGlobalVariable(
+  spv::Id array_id = SPIRVModule()->GetOrCreateGlobalVariable(
       ptr_struct_type, false, {"Uniform"},
       array_prefix + std::to_string(allocation.index()));
   allocation_map_.insert({allocation.index(), array_id});
 
   // Decorate.
-  module_->Decorate(array_type, {"ArrayStride", "4"});
-  module_->MemberDecorate(struct_type, {"0", "Offset", "0"});
-  module_->Decorate(struct_type, {"BufferBlock"});
-  module_->Decorate(array_id, {"DecriptiorSet", "0"});
-  module_->Decorate(array_id, {"Binding", std::to_string(binding_counter_++)});
+  SPIRVModule()->Decorate(array_type, {"ArrayStride", "4"});
+  SPIRVModule()->MemberDecorate(struct_type, {"0", "Offset", "0"});
+  SPIRVModule()->Decorate(struct_type, {"BufferBlock"});
+  SPIRVModule()->Decorate(array_id, {"DecriptiorSet", "0"});
+  SPIRVModule()->Decorate(array_id,
+                          {"Binding", std::to_string(binding_counter_++)});
 
   return Status::OK();
 }
@@ -298,22 +298,21 @@ Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
   // For this moment just handle the elementwise operations.
   const HloInstruction* lhs = hlo->operand(0);
   const HloInstruction* rhs = hlo->operand(1);
-
-  spirv::BasicBlock* entry_block = builder()->GetCurrentInsertPoint();
+  spirv::BasicBlock* entry_block = SPIRVBuilder()->GetCurrentInsertPoint();
 
   // The innter bound for the buffer.
-  spv::Id const_int64_0 = module_->GetOrCreateGlobalVariable(
-      module_->GetOrCreateInt64TypeId(), true, {"0"}, "const_int64_t");
+  spv::Id const_int64_0 = SPIRVModule()->GetOrCreateGlobalVariable(
+      SPIRVModule()->GetOrCreateInt64TypeId(), true, {"0"}, "const_int64_t");
 
   // Create new basic block. 
   spirv::BasicBlock* current_block = new spirv::BasicBlock("current");
-  function_->AddBasicBlock(current_block);
+  SPIRVFunction()->AddBasicBlock(current_block);
 
-  builder()->CreateBr(current_block);
-  builder()->SetInsertPoint(current_block);
-  spv::Id index = builder()->CreatePhi(module_->GetOrCreateInt64TypeId());
-  builder()->AddIncoming(current_block, index, const_int64_0, entry_block);
-
+  SPIRVBuilder()->CreateBr(current_block);
+  SPIRVBuilder()->SetInsertPoint(current_block);
+  spv::Id index =
+      SPIRVBuilder()->CreatePhi(SPIRVModule()->GetOrCreateInt64TypeId());
+  SPIRVBuilder()->AddIncoming(current_block, index, const_int64_0, entry_block);
   return Status::OK();
 }
 
@@ -341,6 +340,14 @@ spv::Id SPIRVIrEmitter::EmitGlobalBufferPointer(
 
 int64 SPIRVIrEmitter::ByteSizeOf(const Shape& shape) const {
   return ShapeUtil::ByteSizeOf(shape, sizeof(void*));
+}
+
+void SPIRVIrEmitter::InitFunction(spv::Id ret_type, std::string function_name) {
+  spv::Id function_type = SPIRVModule()->GetOrCreateFunctionTypeId(
+      ret_type, function_name + "func_type");
+
+  function_ = SPIRVModule()->GetOrCreateFunction(function_name, ret_type,
+                                                 function_type, "None");
 }
 }  // namespace gpu
 }  // namespace xla
