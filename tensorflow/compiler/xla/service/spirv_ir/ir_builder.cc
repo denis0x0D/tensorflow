@@ -780,6 +780,8 @@ void IRBuilder::SetInsertPoint(BasicBlock *insert_point) {
   insert_point_ = insert_point;
 }
 
+BasicBlock *IRBuilder::GetCurrentInsertPoint() { return insert_point_; }
+
 // %id = OpLoad %type %ptr MemAccesstype
 spv::Id IRBuilder::CreateLoad(spv::Id type, spv::Id ptr,
                               std::vector<std::string> literals) {

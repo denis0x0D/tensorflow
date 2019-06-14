@@ -90,15 +90,15 @@ Status SPIRVIrEmitter::EmitComputation(
     const HloComputation* computation, const string& function_name,
     bool is_top_level_computation,
     absl::Span<HloInstruction* const> instruction_order) {
-
   spv::Id void_t = module_->GetOrCreateVoidTypeId();
   spv::Id function_type = module_->GetOrCreateFunctionTypeId(
       void_t, std::string("function_type") + function_name);
-  spirv::Function* function = module_->GetOrCreateFunction(
-      function_name, void_t, function_type, "None");
+  function_ = module_->GetOrCreateFunction(function_name, void_t, function_type,
+                                           "None");
 
-  spirv::BasicBlock* entry = new spirv::BasicBlock("entry");
-  function->AddEntryBlock(entry);
+    spirv::BasicBlock* entry = new spirv::BasicBlock("entry");
+  function_->AddEntryBlock(entry);
+  builder()->SetInsertPoint(entry);
   computation->AcceptOrdered(this, instruction_order);
   return Status::OK();
 }
@@ -294,17 +294,26 @@ Status SPIRVIrEmitter::Preprocess(HloInstruction* hlo) { return Status::OK(); }
 Status SPIRVIrEmitter::Postprocess(HloInstruction* hlo) { return Status::OK(); }
 
 Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
-  LOG(INFO) << "Default action" << hlo->ToString();
-  /*
-    for (const HloInstruction* operand : hlo->operands()) {
-      operand_to_generator[operand] = [=](const llvm_ir::IrArray::Index& index)
-    { return GetIrArrayFor(operand).EmitReadArrayElement(index, &b_);
-      };
-    }
-    CpuElementalIrEmitter elemental_emitter(hlo_module_config_, this, module_);
-    return EmitTargetElementLoop(
-        hlo, elemental_emitter.MakeElementGenerator(hlo, operand_to_generator));
-  */
+  // TODO: Make this handle more generic
+  // For this moment just handle the elementwise operations.
+  const HloInstruction* lhs = hlo->operand(0);
+  const HloInstruction* rhs = hlo->operand(1);
+
+  spirv::BasicBlock* entry_block = builder()->GetCurrentInsertPoint();
+
+  // The innter bound for the buffer.
+  spv::Id const_int64_0 = module_->GetOrCreateGlobalVariable(
+      module_->GetOrCreateInt64TypeId(), true, {"0"}, "const_int64_t");
+
+  // Create new basic block. 
+  spirv::BasicBlock* current_block = new spirv::BasicBlock("current");
+  function_->AddBasicBlock(current_block);
+
+  builder()->CreateBr(current_block);
+  builder()->SetInsertPoint(current_block);
+  spv::Id index = builder()->CreatePhi(module_->GetOrCreateInt64TypeId());
+  builder()->AddIncoming(current_block, index, const_int64_0, entry_block);
+
   return Status::OK();
 }
 

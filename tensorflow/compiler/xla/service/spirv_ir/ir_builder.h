@@ -272,6 +272,8 @@ class IRBuilder {
 
   // Sets the insert point
   void SetInsertPoint(BasicBlock *insert_point);
+  // Returns current insert point
+  BasicBlock *GetCurrentInsertPoint();
   // %id = OpLoad %type %ptr MemAccesstype
   spv::Id CreateLoad(spv::Id type, spv::Id ptr,
                      std::vector<std::string> literals);

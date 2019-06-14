@@ -123,6 +123,7 @@ class SPIRVIrEmitter : public DfsHloVisitorWithDefault {
   // Map containing all previously emitted computations.
   std::map<const HloComputation*, spirv::Function*> emitted_functions_;
   spirv::IRBuilder* b_;
+  spirv::Function* function_;
   // Maps the buffer allocation slices for the parameters to the computation
   // being compiled to their parameter numbers.  Only relevant for thread local
   // computations.
@@ -148,6 +149,7 @@ class SPIRVIrEmitter : public DfsHloVisitorWithDefault {
   absl::flat_hash_map<BufferAllocation::Index, spv::Id>
       constant_buffer_to_global_;
   std::vector<const HloComputation*> global_computations_;
+  int64 binding_counter_{0};
   TF_DISALLOW_COPY_AND_ASSIGN(SPIRVIrEmitter);
 };
 }  // namespace gpu
