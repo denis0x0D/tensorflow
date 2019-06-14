@@ -298,6 +298,15 @@ Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
   // For this moment just handle the elementwise operations.
   const HloInstruction* lhs = hlo->operand(0);
   const HloInstruction* rhs = hlo->operand(1);
+
+  TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice slice1,
+                      assignment_.GetUniqueTopLevelSlice(lhs));
+  TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice slice2,
+                      assignment_.GetUniqueTopLevelSlice(rhs));
+
+  LOG(INFO) << slice1.ToString();
+  LOG(INFO) << slice2.ToString();
+
   spirv::BasicBlock* entry_block = SPIRVBuilder()->GetCurrentInsertPoint();
 
   // The innter bound for the buffer.
