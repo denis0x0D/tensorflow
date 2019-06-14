@@ -107,11 +107,6 @@ class SPIRVIrEmitter : public DfsHloVisitorWithDefault {
   Status FinishVisit(HloInstruction* root) override;
   Status Preprocess(HloInstruction* hlo) override;
   Status Postprocess(HloInstruction* hlo) override;
-  Status EmitTargetAddressForOp(const HloInstruction* op);
-  spv::Id EmitGlobalBufferPointer(const BufferAllocation::Slice& allocation,
-                                  const Shape& target_shape);
-  spv::Id EmitBufferPointer(const BufferAllocation::Slice& allocation,
-                            const Shape& target_shape);
 
  private:
   void InitFunction(spv::Id ret_type, std::string function_name);
