@@ -106,6 +106,11 @@ def tfmatmul(_):
   y = array_ops.placeholder(dtypes.float32, name='y_hold')
   math_ops.matmul(x, y, name='x_y_prod')
 
+def tfadd2(_):
+  x = array_ops.placeholder(dtypes.float32, name='x_hold')
+  y = array_ops.placeholder(dtypes.float32, name='y_hold')
+  math_ops.add(x, y, name='x_y_prod')
+
 
 def tfmatmulandadd(_):
   # This tests multiple outputs.
@@ -180,6 +185,7 @@ def write_graph(build_graph, out_dir):
 
 def main(_):
   write_graph(tfadd, FLAGS.out_dir)
+  write_graph(tfadd2, FLAGS.out_dir)
   write_graph(tfadd_with_ckpt, FLAGS.out_dir)
   write_graph(tfadd_with_ckpt_saver, FLAGS.out_dir)
   write_graph(tfassert_eq, FLAGS.out_dir)
