@@ -86,17 +86,33 @@ Status SPIRVIrEmitter::EmitConstantGlobals() {
   return Status::OK();
 }
 
+Status SPIRVIrEmitter::InitGlobalInvocationId() {
+  spv::Id v3_int32_t = SPIRVModule()->GetOrCreateCustomType(
+      spv::Op::OpTypeVector, SPIRVModule()->GetOrCreateInt32TypeId(), {"3"},
+      "v3_int");
+  spv::Id ptr_input_v3int = SPIRVModule()->GetOrCreatePointerTypeId(
+      v3_int32_t, "Input", "ptr_input_v3int");
+  spv::Id global_invocation_id = SPIRVModule()->GetOrCreateGlobalVariable(
+      ptr_input_v3int, false, {"Input"}, "global_invoc_id");
+  SPIRVModule()->CreateEntryPoint(SPIRVFunction(), global_invocation_id);
+  SPIRVModule()->CreateExecutionMode(SPIRVFunction(),
+                                     {"LocalSize", "1", "1", "1"});
+  return Status::OK();
+}
+
 Status SPIRVIrEmitter::EmitComputation(
     const HloComputation* computation, const string& function_name,
     bool is_top_level_computation,
     absl::Span<HloInstruction* const> instruction_order) {
   spv::Id void_t = SPIRVModule()->GetOrCreateVoidTypeId();
-  spv::Id function_type = SPIRVModule()->GetOrCreateFunctionTypeId(
-      void_t, std::string("function_type") + function_name);
-  InitFunction(void_t, function_name);
+  TF_RETURN_IF_ERROR(InitFunction(void_t, function_name));
+  TF_RETURN_IF_ERROR(InitGlobalInvocationId());
 
+  // 3 dim vector.
   spirv::BasicBlock* entry = new spirv::BasicBlock("entry");
+  spirv::BasicBlock* ret = new spirv::BasicBlock("ret");
   SPIRVFunction()->AddEntryBlock(entry);
+  SPIRVFunction()->AddRetBlock(ret);
   SPIRVBuilder()->SetInsertPoint(entry);
 
   computation->AcceptOrdered(this, instruction_order);
@@ -303,25 +319,115 @@ Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
                       assignment_.GetUniqueTopLevelSlice(lhs));
   TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice slice2,
                       assignment_.GetUniqueTopLevelSlice(rhs));
+  TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice slice3,
+                      assignment_.GetUniqueTopLevelSlice(hlo));
 
-  LOG(INFO) << slice1.ToString();
-  LOG(INFO) << slice2.ToString();
+  LOG(INFO) << "operand 1 " << lhs->ToString();
+  LOG(INFO) << "operand 2 " << rhs->ToString();
+
+  LOG(INFO) << "slice for operand 1 " << slice1.ToString();
+  LOG(INFO) << "slice for operand 2 " << slice2.ToString();
+  LOG(INFO) << "slice for result " << slice3.ToString();
+
+  const Shape& shape1 = lhs->shape();
+  const Shape& shape2 = rhs->shape();
+  const Shape& target_shape = hlo->shape();
+
+  LOG(INFO) << "shape 1 " << shape1.ToString();
+  LOG(INFO) << "shape 2 " << shape2.ToString();
+  LOG(INFO) << "target shape " << target_shape.ToString();
+
+  const int64 target_dimensions = target_shape.dimensions().size();
+  LOG(INFO) << "target shape dimensions " << target_dimensions;
+
+  for (int64 i = 0; i < target_dimensions; ++i) {
+    LOG(INFO) << "dimension " << i << " size " << target_shape.dimensions(i);
+  }
+
+  int64 first_dim = target_shape.dimensions(0);
 
   spirv::BasicBlock* entry_block = SPIRVBuilder()->GetCurrentInsertPoint();
 
-  // The innter bound for the buffer.
-  spv::Id const_int64_0 = SPIRVModule()->GetOrCreateGlobalVariable(
-      SPIRVModule()->GetOrCreateInt64TypeId(), true, {"0"}, "const_int64_t");
+  // The lower bound for the tensor.
+  spv::Id lower_bound = SPIRVModule()->GetOrCreateGlobalVariable(
+      SPIRVModule()->GetOrCreateInt64TypeId(), true, {"0"}, "const_int64_0");
+
+  std::string first_dim_str = std::to_string(first_dim);
+  // The upper bound for the tensor.
+  spv::Id upper_bound = SPIRVModule()->GetOrCreateGlobalVariable(
+      SPIRVModule()->GetOrCreateInt64TypeId(), true, {first_dim_str},
+      "const_int64_" + first_dim_str);
+
+  // FIXME: The step should depends on GPU global and local blocks count.
+  std::string step_str = "1";
+
+  spv::Id step = SPIRVModule()->GetOrCreateGlobalVariable(
+      SPIRVModule()->GetOrCreateInt64TypeId(), true, {step_str},
+      "const_int64_" + step_str);
 
   // Create new basic block. 
   spirv::BasicBlock* current_block = new spirv::BasicBlock("current");
+  spirv::BasicBlock* body_block = new spirv::BasicBlock("body_block");
+  spirv::BasicBlock* tail_block = new spirv::BasicBlock("tail_block");
+
   SPIRVFunction()->AddBasicBlock(current_block);
+  SPIRVFunction()->AddBasicBlock(body_block);
+  SPIRVFunction()->AddBasicBlock(tail_block);
 
   SPIRVBuilder()->CreateBr(current_block);
   SPIRVBuilder()->SetInsertPoint(current_block);
-  spv::Id index =
+  spv::Id phi_index =
       SPIRVBuilder()->CreatePhi(SPIRVModule()->GetOrCreateInt64TypeId());
-  SPIRVBuilder()->AddIncoming(current_block, index, const_int64_0, entry_block);
+  SPIRVBuilder()->AddIncoming(current_block, phi_index, lower_bound,
+                              entry_block);
+
+  spv::Id cmp = SPIRVBuilder()->CreateBinOp(
+      spv::Op::OpSLessThan, SPIRVModule()->GetOrCreateBoolTypeId(), phi_index,
+      upper_bound);
+
+  spirv::BasicBlock* ret = SPIRVFunction()->GetRetBlock();
+
+  SPIRVBuilder()->CreateLoopMerge(ret, tail_block, {"None"});
+  SPIRVBuilder()->CreateCondBr(cmp, body_block, ret);
+  SPIRVBuilder()->SetInsertPoint(body_block);
+
+  spv::Id lhs_array = allocation_map_[slice1.index()];
+  spv::Id rhs_array = allocation_map_[slice2.index()];
+  spv::Id target_array = allocation_map_[slice2.index()];
+
+  spv::Id ptr_type = SPIRVModule()->GetOrCreatePointerTypeId(
+      SPIRVModule()->GetOrCreateFloat32TypeId(), "Uniform", "float_32_ptr");
+
+  spv::Id lhs_ptr = SPIRVBuilder()->CreateAccessChain(
+      spv::Op::OpInBoundsAccessChain, ptr_type, lhs_array,
+      {lower_bound, phi_index});
+  spv::Id rhs_ptr = SPIRVBuilder()->CreateAccessChain(
+      spv::Op::OpInBoundsAccessChain, ptr_type, rhs_array,
+      {lower_bound, phi_index});
+
+  spv::Id lhs_value = SPIRVBuilder()->CreateLoad(
+      SPIRVModule()->GetOrCreateFloat32TypeId(), lhs_ptr, {"None"});
+  spv::Id rhs_value = SPIRVBuilder()->CreateLoad(
+      SPIRVModule()->GetOrCreateFloat32TypeId(), rhs_ptr, {"None"});
+
+  // Add all elementwise operations.
+  spv::Id target_value = SPIRVBuilder()->CreateBinOp(
+      spv::Op::OpFAdd, SPIRVModule()->GetOrCreateFloat32TypeId(), lhs_value,
+      rhs_value);
+  spv::Id target_ptr = SPIRVBuilder()->CreateAccessChain(
+      spv::Op::OpInBoundsAccessChain, ptr_type, target_array,
+      {lower_bound, phi_index});
+
+  SPIRVBuilder()->CreateStore(target_ptr, target_value, {"None"});
+  SPIRVBuilder()->CreateBr(tail_block);
+  SPIRVBuilder()->SetInsertPoint(tail_block);
+
+  spv::Id index = SPIRVBuilder()->CreateBinOp(
+      spv::Op::OpIAdd, SPIRVModule()->GetOrCreateInt64TypeId(), phi_index,
+      step);
+  SPIRVBuilder()->CreateBr(current_block);
+  SPIRVBuilder()->AddIncoming(current_block, phi_index, index, tail_block);
+
   return Status::OK();
 }
 
@@ -329,12 +435,14 @@ int64 SPIRVIrEmitter::ByteSizeOf(const Shape& shape) const {
   return ShapeUtil::ByteSizeOf(shape, sizeof(void*));
 }
 
-void SPIRVIrEmitter::InitFunction(spv::Id ret_type, std::string function_name) {
+Status SPIRVIrEmitter::InitFunction(spv::Id ret_type,
+                                    std::string function_name) {
   spv::Id function_type = SPIRVModule()->GetOrCreateFunctionTypeId(
       ret_type, function_name + "func_type");
 
   function_ = SPIRVModule()->GetOrCreateFunction(function_name, ret_type,
                                                  function_type, "None");
+  return Status::OK();
 }
 }  // namespace gpu
 }  // namespace xla

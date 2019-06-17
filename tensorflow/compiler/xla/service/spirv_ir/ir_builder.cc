@@ -140,6 +140,8 @@ std::string Instruction::GetStringOpCode() {
       return "OpIMul";
     case spv::Op::OpIAdd:
       return "OpIAdd";
+    case spv::Op::OpFAdd:
+      return "OpFAdd";
     case spv::Op::OpISub:
       return "OpISub";
     case spv::Op::OpUDiv:
@@ -256,6 +258,7 @@ void IRVisitor::Visit(Instruction *instruction) {
       break;
     case spv::Op::OpIMul:
     case spv::Op::OpIAdd:
+    case spv::Op::OpFAdd:
     case spv::Op::OpSLessThan:
     case spv::Op::OpUDiv:
     case spv::Op::OpSDiv:
@@ -455,6 +458,7 @@ Module::~Module() {
       delete bb;
     }
     delete table_instance.second->GetEntryPoint();
+    delete table_instance.second->GetRetBlock();
     // Delete function.
     delete table_instance.second;
   }
@@ -483,6 +487,11 @@ void Module::Accept(IRVisitor *visitor) {
       for (auto *it : bb->GetInstructions()) {
         visitor->Visit(it);
       }
+    }
+
+    BasicBlock *ret = table_instance.second->GetRetBlock();
+    for (auto *it : ret->GetInstructions()) {
+      visitor->Visit(it);
     }
   }
 }
@@ -758,7 +767,7 @@ void Function::AddRetBlock(BasicBlock *bb) {
   bb->AddInstruction(ret_instruction);
   bb->AddInstruction(func_end_instruction);
   ret_block_ = bb;
-  basic_blocks_.push_back(bb);
+//  basic_blocks_.push_back(bb);
 }
 
 void Function::SetEntryPoint(Instruction *entry_point) {

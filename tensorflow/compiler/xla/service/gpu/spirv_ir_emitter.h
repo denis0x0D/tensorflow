@@ -109,7 +109,8 @@ class SPIRVIrEmitter : public DfsHloVisitorWithDefault {
   Status Postprocess(HloInstruction* hlo) override;
 
  private:
-  void InitFunction(spv::Id ret_type, std::string function_name);
+  Status InitFunction(spv::Id ret_type, std::string function_name);
+  Status InitGlobalInvocationId();
   const HloModuleConfig& hlo_module_config_;
   // Assignment of the buffers needed by the computation and their shape
   // information.
