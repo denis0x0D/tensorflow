@@ -135,7 +135,7 @@ Status SPIRVIrEmitter::EmitGlobalAllocation(
     const BufferAllocation& allocation) {
   // Create global array using ir builder and add it to hash map.
   //LOG(INFO) << "Create allocaiton for " << allocation.ToString();
-  spv::Id int_64_t = SPIRVModule()->GetOrCreateInt64TypeId();
+  spv::Id int_64_t = SPIRVModule()->GetOrCreateInt32TypeId();
   // FIXME: Find out how to get actual buffer type, it should depend on buffer
   // allocation.
   spv::Id float_32_t = SPIRVModule()->GetOrCreateFloat32TypeId();
@@ -148,7 +148,6 @@ Status SPIRVIrEmitter::EmitGlobalAllocation(
   std::string array_type_prefix = "array_type";
   spv::Id array_type = SPIRVModule()->GetOrCreateArrayTypeId(
       float_32_t, allocation_size, array_type_prefix + allocation_size_str);
-
   
   std::string struct_type_prefix = "struct_type";
   spv::Id struct_type = SPIRVModule()->GetOrCreateStructTypeId(
@@ -162,12 +161,17 @@ Status SPIRVIrEmitter::EmitGlobalAllocation(
   spv::Id array_id = SPIRVModule()->GetOrCreateGlobalVariable(
       ptr_struct_type, false, {"Uniform"},
       array_prefix + std::to_string(allocation.index()));
+
   allocation_map_.insert({allocation.index(), array_id});
 
-  // Decorate.
-  SPIRVModule()->Decorate(array_type, {"ArrayStride", "4"});
-  SPIRVModule()->MemberDecorate(struct_type, {"0", "Offset", "0"});
-  SPIRVModule()->Decorate(struct_type, {"BufferBlock"});
+  // Can't decorate same type more than one time.
+  if (!array_type_set_.count(array_type)) {
+    array_type_set_.insert(array_type);
+    SPIRVModule()->Decorate(array_type, {"ArrayStride", "4"});
+    SPIRVModule()->MemberDecorate(struct_type, {"0", "Offset", "0"});
+    SPIRVModule()->Decorate(struct_type, {"BufferBlock"});
+  }
+
   SPIRVModule()->Decorate(array_id, {"DescriptorSet", "0"});
   SPIRVModule()->Decorate(array_id,
                           {"Binding", std::to_string(binding_counter_++)});
@@ -314,17 +318,17 @@ Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
   spirv::BasicBlock* entry_block = SPIRVBuilder()->GetCurrentInsertPoint();
   // The lower bound for the tensor.
   spv::Id lower_bound = SPIRVModule()->GetOrCreateGlobalVariable(
-      SPIRVModule()->GetOrCreateInt64TypeId(), true, {"0"}, "const_int64_0");
+      SPIRVModule()->GetOrCreateInt32TypeId(), true, {"0"}, "const_int64_0");
 
   std::string first_dim_str = std::to_string(first_dim);
   // The upper bound for the tensor.
   spv::Id upper_bound = SPIRVModule()->GetOrCreateGlobalVariable(
-      SPIRVModule()->GetOrCreateInt64TypeId(), true, {first_dim_str},
+      SPIRVModule()->GetOrCreateInt32TypeId(), true, {first_dim_str},
       "const_int64_" + first_dim_str);
   // FIXME: The step should depends on GPU global and local blocks count.
   std::string step_str = "1";
   spv::Id step = SPIRVModule()->GetOrCreateGlobalVariable(
-      SPIRVModule()->GetOrCreateInt64TypeId(), true, {step_str},
+      SPIRVModule()->GetOrCreateInt32TypeId(), true, {step_str},
       "const_int64_" + step_str);
   // Create new basic block. 
   spirv::BasicBlock* current_block = new spirv::BasicBlock("current");
@@ -338,7 +342,7 @@ Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
   SPIRVBuilder()->CreateBr(current_block);
   SPIRVBuilder()->SetInsertPoint(current_block);
   spv::Id phi_index =
-      SPIRVBuilder()->CreatePhi(SPIRVModule()->GetOrCreateInt64TypeId());
+      SPIRVBuilder()->CreatePhi(SPIRVModule()->GetOrCreateInt32TypeId());
   SPIRVBuilder()->AddIncoming(current_block, phi_index, lower_bound,
                               entry_block);
 
@@ -383,7 +387,7 @@ Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
   SPIRVBuilder()->SetInsertPoint(tail_block);
 
   spv::Id index = SPIRVBuilder()->CreateBinOp(
-      spv::Op::OpIAdd, SPIRVModule()->GetOrCreateInt64TypeId(), phi_index,
+      spv::Op::OpIAdd, SPIRVModule()->GetOrCreateInt32TypeId(), phi_index,
       step);
   SPIRVBuilder()->CreateBr(current_block);
   SPIRVBuilder()->AddIncoming(current_block, phi_index, index, tail_block);

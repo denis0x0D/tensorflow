@@ -130,6 +130,8 @@ class SPIRVIrEmitter : public DfsHloVisitorWithDefault {
       computation_parameter_allocations_;
 
   absl::flat_hash_map<BufferAllocation::Index, spv::Id> allocation_map_;
+  absl::flat_hash_set<spv::Id> array_type_set_;
+
   // Maps HLO instructions to their index into the profile counter array.
   absl::flat_hash_map<const HloInstruction*, spv::Id> emitted_value_;
   // Returns the number of bytes within the shape.
