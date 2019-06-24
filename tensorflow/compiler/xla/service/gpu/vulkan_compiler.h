@@ -65,12 +65,24 @@ class VulkanAotCompilationResult : public AotCompilationResult {
   const ObjectFileData& object_file_data() const { return object_file_data_; }
   int64 result_buffer_index() const { return result_buffer_index_; }
 
+  const std::vector<::tensorflow::cpu_function_runtime::BufferInfo>&
+  buffer_infos() const {
+    return buffer_infos_;
+  }
+
+  HloProfilePrinterData* hlo_profile_printer_data() const {
+    return hlo_profile_printer_data_.get();
+  }
+
  private:
   // Contains the compiled computation: an object file.
   const ObjectFileData object_file_data_;
   // result of the computation.  This buffer should be passed into the output
   // parameter when calling the compiled computation.
   const int64 result_buffer_index_;
+  const std::vector<::tensorflow::cpu_function_runtime::BufferInfo>
+      buffer_infos_;
+  std::unique_ptr<HloProfilePrinterData> hlo_profile_printer_data_;
 };
 
 class VulkanCompiler : public Compiler {

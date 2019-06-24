@@ -147,6 +147,7 @@ class CodeGenerator : public IRVisitor {
   void HandleOperands(const std::vector<Operand> &operands);
   void Dump();
   void AddMetaInfo();
+  std::string GetCode();
 
  private:
   std::stringstream stream_;

@@ -305,6 +305,9 @@ CodeGenerator::~CodeGenerator() {}
 void CodeGenerator::Visit(Instruction *instruction) {
   IRVisitor::Visit(instruction);
 }
+
+std::string CodeGenerator::GetCode() { return stream_.str(); }
+
 // Instruction processing is split based on instruction semantics.
 // It could make sence, because some instructions have different text layout
 // than binary form.

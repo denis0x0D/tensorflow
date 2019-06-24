@@ -88,37 +88,35 @@ Status Main(const MainFlags& flags) {
   TF_RETURN_IF_ERROR(ReadProtoFile(flags.graph, &graph_def));
   CompileResult compile_result;
   TF_RETURN_IF_ERROR(CompileGraph(graph_def, config, flags, &compile_result));
-  LOG(INFO) << "End of CompileGraph";
 
   // Write output files.
-  /*TODO: Enable this part after codegen is done.
   Env* env = Env::Default();
   const std::vector<char>& obj = compile_result.aot->object_file_data();
-  TF_RETURN_IF_ERROR(
-      WriteStringToFile(env, flags.out_function_object,
-                        absl::string_view(obj.data(), obj.size())));
-  CodegenOpts codegen_opts;
-  codegen_opts.gen_name_to_index = flags.gen_name_to_index;
-  codegen_opts.gen_program_shape = flags.gen_program_shape;
-  codegen_opts.target_triple = flags.target_triple;
-  if (flags.cpp_class.empty()) {
-    return errors::InvalidArgument("Must specify --cpp_class");
-  }
-  codegen_opts.gen_hlo_profile_printer_data =
-      xla::GetDebugOptionsFromFlags().xla_hlo_profile();
-  TF_RETURN_IF_ERROR(ParseCppClass(flags.cpp_class, &codegen_opts.class_name,
-                                   &codegen_opts.namespaces));
+  TF_RETURN_IF_ERROR(WriteStringToFile(
+      env, "kernel.spvasm", absl::string_view(obj.data(), obj.size())));
 
-  MetadataResult metadata_result;
-  TF_RETURN_IF_ERROR(
-      GenerateMetadata(codegen_opts, compile_result, &metadata_result));
-  TF_RETURN_IF_ERROR(WriteStringToFile(env, flags.out_metadata_object,
-                                       metadata_result.object_file_data));
-  string header;
-  TF_RETURN_IF_ERROR(GenerateHeader(codegen_opts, config, compile_result,
-                                    metadata_result, &header));
-  TF_RETURN_IF_ERROR(WriteStringToFile(env, flags.out_header, header));
-  */
+  // FIXME: Generate header same as for CPU.
+  // CodegenOpts codegen_opts;
+  // codegen_opts.gen_name_to_index = flags.gen_name_to_index;
+  // codegen_opts.gen_program_shape = flags.gen_program_shape;
+  // codegen_opts.target_triple = flags.target_triple;
+  // if (flags.cpp_class.empty()) {
+  //  return errors::InvalidArgument("Must specify --cpp_class");
+  // }
+  // codegen_opts.gen_hlo_profile_printer_data =
+  //   xla::GetDebugOptionsFromFlags().xla_hlo_profile();
+  // TF_RETURN_IF_ERROR(ParseCppClass(flags.cpp_class, &codegen_opts.class_name,
+  //                                   &codegen_opts.namespaces));
+
+  // MetadataResult metadata_result;
+  // TF_RETURN_IF_ERROR(
+  //   GenerateMetadata(codegen_opts, compile_result, &metadata_result));
+  //TF_RETURN_IF_ERROR(WriteStringToFile(env, flags.out_metadata_object,
+   //                                    metadata_result.object_file_data));
+  //string header;
+  // TF_RETURN_IF_ERROR(GenerateHeader(codegen_opts, config, compile_result,
+  //                                 metadata_result, &header));
+  // TF_RETURN_IF_ERROR(WriteStringToFile(env, flags.out_header, header));
   return Status::OK();
 }
 

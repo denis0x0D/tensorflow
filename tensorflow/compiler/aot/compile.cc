@@ -74,20 +74,17 @@ Status CompileXla(xla::CompileOnlyClient* client,
   instance.argument_layouts = std::move(arg_layout_ptrs);
   xla::Shape result_shape(pshape->result());
   instance.result_layout = &result_shape;
-  LOG(INFO) << "Compile Ahead of Time";
   xla::StatusOr<std::vector<std::unique_ptr<xla::AotCompilationResult>>>
       aot_or = client->CompileAheadOfTime({instance}, aot_opts);
   if (!aot_or.ok()) {
     return errors::Unknown("XLA compilation failed: ",
                            aot_or.status().error_message());
   }
-  /*
   compile_result->aot = xla::unique_ptr_static_cast<xla::AotCompilationResult>(
       std::move(aot_or.ValueOrDie().back()));
   compile_result->entry_point = aot_opts.entry_point_name();
-  compile_result->pointer_size =
-      xla::CompileOnlyClient::PointerSizeForTriple(aot_opts.triple());
-      */
+  // compile_result->pointer_size =
+  //   xla::CompileOnlyClient::PointerSizeForTriple(aot_opts.triple());
   return Status::OK();
 }
 
@@ -106,14 +103,12 @@ Status CompileGraph(const GraphDef& graph_def, const tf2xla::Config& config,
   // xla::XlaComputation computation;
   // TF_RETURN_IF_ERROR(
   //    ConvertGraphDefToXla(graph_def, config, client, &computation));
-  LOG(INFO) << "Compile Graph ";
   se::Platform* vulkan_platform =
       se::MultiPlatformManager::PlatformWithName("Host").ValueOrDie();
   xla::CompileOnlyClient* client =
       xla::ClientLibrary::GetOrCreateCompileOnlyClient(vulkan_platform)
           .ValueOrDie();
   xla::XlaComputation computation;
-  LOG(INFO) << "ConvertGraphDefToXla";
   TF_RETURN_IF_ERROR(
       ConvertGraphDefToXla(graph_def, config, client, &computation));
   if (!flags.out_session_module.empty()) {
@@ -129,7 +124,6 @@ Status CompileGraph(const GraphDef& graph_def, const tf2xla::Config& config,
         WriteStringToFile(Env::Default(), flags.out_session_module,
                           absl::string_view(serialized.get(), size)));
   }
-  LOG(INFO) << "VulkanAotCompilationsOptions";
   xla::gpu::VulkanAotCompilationOptions aot_opts(
       flags.target_triple, flags.target_features, flags.target_gpu,
       flags.entry_point);

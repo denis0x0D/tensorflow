@@ -81,6 +81,8 @@ limitations under the License.
 
 namespace xla {
 namespace gpu {
+// TODO: Here is 
+using BufferInfo = ::tensorflow::cpu_function_runtime::BufferInfo;
 
 VulkanAotCompilationOptions::VulkanAotCompilationOptions(
     string triple, string vulkan_name, string features, string entry_point_name)
@@ -303,24 +305,19 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
         entry_computation, "compute_kernel", true,
         schedule.sequence(entry_computation).instructions()));
 
-    spirv::IRPrinter* printer = new spirv::IRPrinter();
-    printer->AddMetaInfo();
-    ir_emitter.SPIRVModule()->Accept(printer);
-    printer->Dump();
+    spirv::CodeGenerator* code_generator = new spirv::CodeGenerator();
+    code_generator->AddMetaInfo();
+    ir_emitter.SPIRVModule()->Accept(code_generator);
 
     // const string& entry_point_name = options.entry_point_name();
-    // ObjectFileData object_file_data(object_file->getBufferStart(),
-    //                                object_file->getBufferEnd());
+    auto code = code_generator->GetCode();
+    ObjectFileData object_file_data = ObjectFileData(code.begin(), code.end());
 
-    // TODO: How to create the buffers for Vulkan
-    // CreateBufferInfosFromBufferAssignment(*assignment);
+    TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice result_slice,
+                        assignment->GetUniqueTopLevelOutputSlice());
 
-    //    TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice result_slice,
-    //                       assignment->GetUniqueTopLevelOutputSlice());
-
-    // results.emplace_back(absl::make_unique<VulkanAotCompilationResult>(
-    //   std::move(object_file_data), std::move(buffer_infos),
-    //  result_slice.index(), std::move(hlo_profile_printer_data)));
+    results.emplace_back(absl::make_unique<VulkanAotCompilationResult>(
+        std::move(object_file_data), result_slice.index()));
   }
   return std::move(results);
 }
