@@ -258,7 +258,9 @@ class Module {
   std::string module_name_;
   std::vector<Instruction *> header_;
   std::vector<Instruction *> decoration_table_;
-  std::unordered_map<std::string, Instruction *> user_vars_types_table_;
+  // Using vector because the order for vars and types is critical.
+  std::vector<std::pair<std::string, Instruction *>> user_vars_types_table_;
+  Instruction *FindVarOrType(std::string name);
 };
 
 // Class which builds the IR.

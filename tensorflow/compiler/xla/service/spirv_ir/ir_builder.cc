@@ -618,9 +618,9 @@ spv::Id Module::GetOrCreateArrayTypeId(spv::Id type, spv::Id size,
 spv::Id Module::GetOrCreateCustomType(spv::Op type_code, spv::Id type_id,
                                       std::vector<std::string> literals,
                                       std::string type_name) {
-  auto it = user_vars_types_table_.find(type_name);
-  if (it != user_vars_types_table_.end()) {
-    return it->second->GetResultId();
+  auto it = FindVarOrType(type_name);
+  if (it) {
+    return it->GetResultId();
   }
 
   spv::Id id = GetSPIRVContext()->GetUniqueId();
@@ -628,22 +628,22 @@ spv::Id Module::GetOrCreateCustomType(spv::Op type_code, spv::Id type_id,
       GetSPIRVContext()->CreateOperandsFromLiterals(std::move(literals));
   Instruction *instruction =
       new Instruction(type_code, id, type_id, std::move(operands));
-  user_vars_types_table_.insert({type_name, instruction});
+  user_vars_types_table_.push_back({type_name, instruction});
   return id;
 }
 
 spv::Id Module::GetOrCreateCustomTypeLen(spv::Op type_code, spv::Id type_id,
                                          std::vector<Operand> member_types,
                                          std::string type_name) {
-  auto it = user_vars_types_table_.find(type_name);
-  if (it != user_vars_types_table_.end()) {
-    return it->second->GetResultId();
+  auto it = FindVarOrType(type_name);
+  if (it) {
+    return it->GetResultId();
   }
 
   spv::Id id = GetSPIRVContext()->GetUniqueId();
   Instruction *instruction =
       new Instruction(type_code, id, type_id, std::move(member_types));
-  user_vars_types_table_.insert({type_name, instruction});
+  user_vars_types_table_.push_back({type_name, instruction});
   return id;
 }
 
@@ -651,9 +651,9 @@ spv::Id Module::GetOrCreateGlobalVariable(spv::Id type_id, bool is_constant,
                                           std::vector<std::string> literals,
                                           std::string global_var_name,
                                           spv::Id initializer) {
-  auto it = user_vars_types_table_.find(global_var_name);
-  if (it != user_vars_types_table_.end()) {
-    return it->second->GetResultId();
+  auto it = FindVarOrType(global_var_name);
+  if (it) {
+    return it->GetResultId();
   }
 
   spv::Id id = GetSPIRVContext()->GetUniqueId();
@@ -663,22 +663,22 @@ spv::Id Module::GetOrCreateGlobalVariable(spv::Id type_id, bool is_constant,
   Instruction *instruction =
       new Instruction(!is_constant ? spv::Op::OpVariable : spv::Op::OpConstant,
                       id, type_id, std::move(operands));
-  user_vars_types_table_.insert({global_var_name, instruction});
+  user_vars_types_table_.push_back({global_var_name, instruction});
   return id;
 }
 
 spv::Id Module::GetOrCreateConstantComposite(spv::Id type_id,
                                              std::vector<Operand> operands,
                                              std::string constant_name) {
-  auto it = user_vars_types_table_.find(constant_name);
-  if (it != user_vars_types_table_.end()) {
-    return it->second->GetResultId();
+  auto it = FindVarOrType(constant_name);
+  if (it) {
+    return it->GetResultId();
   }
 
   spv::Id id = GetSPIRVContext()->GetUniqueId();
   Instruction *instruction = new Instruction(spv::Op::OpConstantComposite, id,
                                              type_id, std::move(operands));
-  user_vars_types_table_.insert({constant_name, instruction});
+  user_vars_types_table_.push_back({constant_name, instruction});
   return id;
 }
 
@@ -709,6 +709,17 @@ spv::Id Module::GetOrCreateVectorTypeId(spv::Id type, std::string size,
                                         std::string name) {
   return GetOrCreateCustomType(spv::Op::OpTypeVector, type, {std::move(size)},
                                std::move(name));
+}
+
+Instruction *Module::FindVarOrType(std::string type_name) {
+  Instruction *result = nullptr;
+  for (auto it : user_vars_types_table_) {
+    if (it.first == type_name) {
+      result = it.second;
+      break;
+    }
+  }
+  return result;
 }
 
 BasicBlock::BasicBlock(std::string name) : name_(std::move(name)) {
