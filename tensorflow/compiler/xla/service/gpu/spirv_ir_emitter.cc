@@ -56,7 +56,7 @@ SPIRVIrEmitter::SPIRVIrEmitter(const HloModule& hlo_module,
       module_(spirv_module) {
   spirv::BasicBlock* entry = new spirv::BasicBlock("entry");
   b_ = new spirv::IRBuilder(entry, SPIRVModule());
-  LOG(INFO) << "Create SPIRV IR Emitter";
+  //LOG(INFO) << "Create SPIRV IR Emitter";
   spirv_module->InitHeader();
 }
 
@@ -65,9 +65,9 @@ SPIRVIrEmitter::~SPIRVIrEmitter() {}
 // TODO: Implement constants generations into spir-v.
 // From high-level view it should be a OpConstantComposite.
 Status SPIRVIrEmitter::EmitConstantGlobals() {
-  LOG(INFO) << "SPIRVIrEmitter::EmitGlobals\n";
+  //LOG(INFO) << "SPIRVIrEmitter::EmitGlobals\n";
   for (const BufferAllocation& allocation : assignment_.Allocations()) {
-    LOG(INFO) << allocation.ToString();
+    //LOG(INFO) << allocation.ToString();
     if (!allocation.is_constant()) {
       continue;
     }
@@ -120,7 +120,7 @@ Status SPIRVIrEmitter::EmitComputation(
 }
 
 Status SPIRVIrEmitter::EmitGlobalAllocations() {
-  LOG(INFO) << "EmitGlobalAllocations";
+  //LOG(INFO) << "EmitGlobalAllocations";
 
   for (const auto& allocation : assignment_.Allocations()) {
     if (allocation.is_constant()) {
@@ -134,7 +134,7 @@ Status SPIRVIrEmitter::EmitGlobalAllocations() {
 Status SPIRVIrEmitter::EmitGlobalAllocation(
     const BufferAllocation& allocation) {
   // Create global array using ir builder and add it to hash map.
-  LOG(INFO) << "Create allocaiton for " << allocation.ToString();
+  //LOG(INFO) << "Create allocaiton for " << allocation.ToString();
   spv::Id int_64_t = SPIRVModule()->GetOrCreateInt64TypeId();
   // FIXME: Find out how to get actual buffer type, it should depend on buffer
   // allocation.
@@ -168,7 +168,7 @@ Status SPIRVIrEmitter::EmitGlobalAllocation(
   SPIRVModule()->Decorate(array_type, {"ArrayStride", "4"});
   SPIRVModule()->MemberDecorate(struct_type, {"0", "Offset", "0"});
   SPIRVModule()->Decorate(struct_type, {"BufferBlock"});
-  SPIRVModule()->Decorate(array_id, {"DecriptiorSet", "0"});
+  SPIRVModule()->Decorate(array_id, {"DescriptorSet", "0"});
   SPIRVModule()->Decorate(array_id,
                           {"Binding", std::to_string(binding_counter_++)});
 
@@ -204,7 +204,7 @@ Status SPIRVIrEmitter::HandleSort(HloInstruction* hlo){
   return Unimplemented("Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleTuple(HloInstruction* tuple) {
-  LOG(INFO) << tuple->ToString();
+  //LOG(INFO) << tuple->ToString();
   return Status::OK();
 }
 Status SPIRVIrEmitter::HandleReduceWindow(HloInstruction* reduce_window) {
@@ -215,28 +215,17 @@ Status SPIRVIrEmitter::HandleSelectAndScatter(
   return Unimplemented("SelectAndScatter Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleDot(HloInstruction* dot) {
-  LOG(INFO) << "handle dot";
-  const HloInstruction* lhs = dot->operand(0);
-  const HloInstruction* rhs = dot->operand(1);
-  TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice slice1,
-                      assignment_.GetUniqueTopLevelSlice(lhs));
-  LOG(INFO) << slice1.ToString();
-  return Status::OK();
+  return Unimplemented("Dot Op is not implemented for Vulkan.");
 }
-
 Status SPIRVIrEmitter::HandleFft(HloInstruction* fft) {
   return Unimplemented("Fft Op is not implemented for Vulkan.");
 }
 Status SPIRVIrEmitter::HandleAllReduce(HloInstruction* crs) {
   return Unimplemented("AllReduce Op is not implemented for Vulkan.");
 }
-
 Status SPIRVIrEmitter::HandleParameter(HloInstruction* parameter) {
-  // TODO: Generate a pointer to the global buffer.
-  LOG(INFO) << "Handle paranemeter";
   return Status::OK();
 }
-
 Status SPIRVIrEmitter::HandleAllToAll(HloInstruction*) {
   return Unimplemented("AllToAll is not implemented for Vulkan.");
 }
@@ -319,35 +308,10 @@ Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
                       assignment_.GetUniqueTopLevelSlice(lhs));
   TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice slice2,
                       assignment_.GetUniqueTopLevelSlice(rhs));
-  TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice slice3,
-                      assignment_.GetUniqueTopLevelSlice(hlo));
 
-  LOG(INFO) << "operand 1 " << lhs->ToString();
-  LOG(INFO) << "operand 2 " << rhs->ToString();
-
-  LOG(INFO) << "slice for operand 1 " << slice1.ToString();
-  LOG(INFO) << "slice for operand 2 " << slice2.ToString();
-  LOG(INFO) << "slice for result " << slice3.ToString();
-
-  const Shape& shape1 = lhs->shape();
-  const Shape& shape2 = rhs->shape();
   const Shape& target_shape = hlo->shape();
-
-  LOG(INFO) << "shape 1 " << shape1.ToString();
-  LOG(INFO) << "shape 2 " << shape2.ToString();
-  LOG(INFO) << "target shape " << target_shape.ToString();
-
-  const int64 target_dimensions = target_shape.dimensions().size();
-  LOG(INFO) << "target shape dimensions " << target_dimensions;
-
-  for (int64 i = 0; i < target_dimensions; ++i) {
-    LOG(INFO) << "dimension " << i << " size " << target_shape.dimensions(i);
-  }
-
   int64 first_dim = target_shape.dimensions(0);
-
   spirv::BasicBlock* entry_block = SPIRVBuilder()->GetCurrentInsertPoint();
-
   // The lower bound for the tensor.
   spv::Id lower_bound = SPIRVModule()->GetOrCreateGlobalVariable(
       SPIRVModule()->GetOrCreateInt64TypeId(), true, {"0"}, "const_int64_0");
@@ -357,14 +321,11 @@ Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
   spv::Id upper_bound = SPIRVModule()->GetOrCreateGlobalVariable(
       SPIRVModule()->GetOrCreateInt64TypeId(), true, {first_dim_str},
       "const_int64_" + first_dim_str);
-
   // FIXME: The step should depends on GPU global and local blocks count.
   std::string step_str = "1";
-
   spv::Id step = SPIRVModule()->GetOrCreateGlobalVariable(
       SPIRVModule()->GetOrCreateInt64TypeId(), true, {step_str},
       "const_int64_" + step_str);
-
   // Create new basic block. 
   spirv::BasicBlock* current_block = new spirv::BasicBlock("current");
   spirv::BasicBlock* body_block = new spirv::BasicBlock("body_block");
@@ -386,7 +347,6 @@ Status SPIRVIrEmitter::DefaultAction(HloInstruction* hlo) {
       upper_bound);
 
   spirv::BasicBlock* ret = SPIRVFunction()->GetRetBlock();
-
   SPIRVBuilder()->CreateLoopMerge(ret, tail_block, {"None"});
   SPIRVBuilder()->CreateCondBr(cmp, body_block, ret);
   SPIRVBuilder()->SetInsertPoint(body_block);
