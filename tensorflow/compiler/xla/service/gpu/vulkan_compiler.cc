@@ -253,18 +253,15 @@ auto memory_alignment = [](LogicalBuffer::Color) { return kMemoryAlignment; };
 StatusOr<std::vector<std::unique_ptr<AotCompilationResult>>>
 VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
                                    const AotCompilationOptions& aot_options) {
-  LOG(INFO) << "Compile Ahead Of Time";
   TF_RET_CHECK(!module_group->empty());
   std::vector<std::unique_ptr<HloModule>> modules =
       module_group->ConsumeModules();
 
-  // TODO: Check for Vulkan
-  LOG(INFO) << "Check platfrom id ";
+  // FIXME: Check for Vulkan
   if (aot_options.PlatformId() != se::host::kHostPlatformId) {
     return InvalidArgument("Incompatible AOT compilation platform");
   }
 
-  LOG(INFO) << "Create Vulkan Compilation Options";
   const VulkanAotCompilationOptions& options =
       static_cast<const VulkanAotCompilationOptions&>(aot_options);
   std::vector<std::unique_ptr<AotCompilationResult>> results;
@@ -287,53 +284,44 @@ VulkanCompiler::CompileAheadOfTime(std::unique_ptr<HloModuleGroup> module_group,
                             memory_alignment,
                             /*allow_input_output_aliasing=*/false,
                             /*allocate_buffers_for_constants=*/true));
-    // BufferAssignment::ToString() includes a header, so no need for us to
-    // print one ourselves.
-    XLA_VLOG_LINES(2, assignment->ToString());
-
-    LOG(INFO) << "BufferAssignment : ";
-    LOG(INFO) << assignment->ToString();
-    LOG(INFO) << "Computation module : ";
-    LOG(INFO) << module->ToString();
 
     const string xla_dump_optimized_hlo_proto_to =
         module->config().debug_options().xla_dump_optimized_hlo_proto_to();
-     if (!xla_dump_optimized_hlo_proto_to.empty()) {
-       HloProto proto = MakeHloProto(*module, *assignment);
-       TF_RETURN_IF_ERROR(protobuf_util::DumpProtoToDirectory(
-           proto, xla_dump_optimized_hlo_proto_to, module->name()));
-     }
+    if (!xla_dump_optimized_hlo_proto_to.empty()) {
+      HloProto proto = MakeHloProto(*module, *assignment);
+      TF_RETURN_IF_ERROR(protobuf_util::DumpProtoToDirectory(
+          proto, xla_dump_optimized_hlo_proto_to, module->name()));
+    }
 
-     spirv::Module vulkan_module("compute_kernel");
-     SPIRVIrEmitter ir_emitter(*module, *assignment, &vulkan_module);
-     // At first we have to emit global allocations
-     TF_RETURN_IF_ERROR(ir_emitter.EmitGlobalAllocations());
-     TF_RETURN_IF_ERROR(ir_emitter.EmitConstantGlobals());
-     HloComputation* entry_computation = module->entry_computation();
-     TF_RETURN_IF_ERROR(ir_emitter.EmitComputation(
-         entry_computation, "compute_kernel", true,
-         schedule.sequence(entry_computation).instructions()));
+    spirv::Module vulkan_module("compute_kernel");
+    SPIRVIrEmitter ir_emitter(*module, *assignment, &vulkan_module);
+    // At first we have to emit global allocations
+    TF_RETURN_IF_ERROR(ir_emitter.EmitGlobalAllocations());
+    TF_RETURN_IF_ERROR(ir_emitter.EmitConstantGlobals());
+    HloComputation* entry_computation = module->entry_computation();
+    TF_RETURN_IF_ERROR(ir_emitter.EmitComputation(
+        entry_computation, "compute_kernel", true,
+        schedule.sequence(entry_computation).instructions()));
 
-     spirv::IRPrinter* printer = new spirv::IRPrinter();
-     printer->AddMetaInfo();
-     ir_emitter.SPIRVModule()->Accept(printer);
-     printer->Dump();
+    spirv::IRPrinter* printer = new spirv::IRPrinter();
+    printer->AddMetaInfo();
+    ir_emitter.SPIRVModule()->Accept(printer);
+    printer->Dump();
 
-     // const string& entry_point_name = options.entry_point_name();
-     // ObjectFileData object_file_data(object_file->getBufferStart(),
-     //                                object_file->getBufferEnd());
+    // const string& entry_point_name = options.entry_point_name();
+    // ObjectFileData object_file_data(object_file->getBufferStart(),
+    //                                object_file->getBufferEnd());
 
-     // TODO: How to create the buffers for Vulkan
-     // CreateBufferInfosFromBufferAssignment(*assignment);
+    // TODO: How to create the buffers for Vulkan
+    // CreateBufferInfosFromBufferAssignment(*assignment);
 
-     //    TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice result_slice,
-     //                       assignment->GetUniqueTopLevelOutputSlice());
+    //    TF_ASSIGN_OR_RETURN(const BufferAllocation::Slice result_slice,
+    //                       assignment->GetUniqueTopLevelOutputSlice());
 
-     // results.emplace_back(absl::make_unique<VulkanAotCompilationResult>(
-     //   std::move(object_file_data), std::move(buffer_infos),
-     //  result_slice.index(), std::move(hlo_profile_printer_data)));
+    // results.emplace_back(absl::make_unique<VulkanAotCompilationResult>(
+    //   std::move(object_file_data), std::move(buffer_infos),
+    //  result_slice.index(), std::move(hlo_profile_printer_data)));
   }
-  LOG(INFO) << "End of CompileAheadOfTime";
   return std::move(results);
 }
 
