@@ -6,8 +6,8 @@ int main() {
   using namespace spirv;
   using namespace std;
   unique_ptr<Module> module = make_unique<Module>("Test module");
-  unique_ptr<IRPrinter> printer = make_unique<IRPrinter>();
-  printer->AddMetaInfo();
+  unique_ptr<CodeGenerator> code_generator = make_unique<CodeGenerator>();
+  code_generator->AddMetaInfo();
   module->InitHeader();
 
   // Types.
@@ -132,7 +132,7 @@ int main() {
   module->CreateEntryPoint(function, global_invoc_id);
   module->CreateExecutionMode(function, {"LocalSize", "1", "1", "1"});
 
-  module->Accept(printer.get());
-  printer->Dump();
+  module->Accept(code_generator.get());
+  code_generator->Dump();
   return 0;
 }

@@ -298,17 +298,17 @@ void IRVisitor::Visit(Instruction *instruction) {
   }
 }
 
-IRPrinter::IRPrinter() {}
+CodeGenerator::CodeGenerator() {}
 
-IRPrinter::~IRPrinter() {}
+CodeGenerator::~CodeGenerator() {}
 
-void IRPrinter::Visit(Instruction *instruction) {
+void CodeGenerator::Visit(Instruction *instruction) {
   IRVisitor::Visit(instruction);
 }
 // Instruction processing is split based on instruction semantics.
 // It could make sence, because some instructions have different text layout
 // than binary form.
-void IRPrinter::HandleHeaderOp(Instruction *instruction) {
+void CodeGenerator::HandleHeaderOp(Instruction *instruction) {
   assert(instruction && "Instruction is nullptr");
   if (instruction->GetOpCode() == spv::Op::OpEntryPoint) {
     unsigned index = 0;
@@ -343,19 +343,19 @@ void IRPrinter::HandleHeaderOp(Instruction *instruction) {
   }
 }
 
-void IRPrinter::HandleVariableOp(Instruction *instruction) {
+void CodeGenerator::HandleVariableOp(Instruction *instruction) {
   HandleInstruction(instruction);
   HandleOperands(instruction->GetOperands());
 }
 
-void IRPrinter::HandleTypeOp(Instruction *instruction) {
+void CodeGenerator::HandleTypeOp(Instruction *instruction) {
   HandleInstruction(instruction);
   HandleOperands(instruction->GetOperands());
 }
 
 // The layout is different agaist usual type op.
 // %id = OpTypePointer literal %type_id
-void IRPrinter::HandlePointerTypeOp(Instruction *instruction) {
+void CodeGenerator::HandlePointerTypeOp(Instruction *instruction) {
   stream_ << ident_ << instruction->GetResultId() << white_space_ << assign_
           << white_space_ << instruction->GetStringOpCode() << white_space_;
   assert(instruction->GetOperands().size() == 1 &&
@@ -366,40 +366,40 @@ void IRPrinter::HandlePointerTypeOp(Instruction *instruction) {
   stream_ << new_line_;
 }
 
-void IRPrinter::HandleFunctionOp(Instruction *instruction) {
+void CodeGenerator::HandleFunctionOp(Instruction *instruction) {
   stream_ << ident_ << instruction->GetResultId() << white_space_ << assign_
           << white_space_ << instruction->GetStringOpCode() << white_space_
           << ident_ << instruction->GetTypeId() << white_space_;
   HandleOperands(instruction->GetOperands());
 }
 
-void IRPrinter::HandleMemAccessOp(Instruction *instruction) {
+void CodeGenerator::HandleMemAccessOp(Instruction *instruction) {
   HandleInstruction(instruction);
   HandleOperands(instruction->GetOperands());
 }
 
-void IRPrinter::HandleControlFlowOp(Instruction *instruction) {
+void CodeGenerator::HandleControlFlowOp(Instruction *instruction) {
   HandleInstruction(instruction);
   HandleOperands(instruction->GetOperands());
 }
 
-void IRPrinter::HandleAccessChainOp(Instruction *instruction) {
+void CodeGenerator::HandleAccessChainOp(Instruction *instruction) {
   HandleInstruction(instruction);
   HandleOperands(instruction->GetOperands());
 }
 
-void IRPrinter::HandleBinOp(Instruction *instruction) {
+void CodeGenerator::HandleBinOp(Instruction *instruction) {
   HandleInstruction(instruction);
   HandleOperands(instruction->GetOperands());
 }
 
-void IRPrinter::HandleDecorate(Instruction *instruction) {
+void CodeGenerator::HandleDecorate(Instruction *instruction) {
   stream_ << tab_ << instruction->GetStringOpCode() << white_space_ << ident_
           << instruction->GetResultId() << white_space_;
   HandleOperands(instruction->GetOperands());
 }
 
-void IRPrinter::HandleInstruction(Instruction *instruction) {
+void CodeGenerator::HandleInstruction(Instruction *instruction) {
   if (instruction->GetResultId()) {
     stream_ << ident_ << instruction->GetResultId() << white_space_ << assign_
             << white_space_;
@@ -412,7 +412,7 @@ void IRPrinter::HandleInstruction(Instruction *instruction) {
   }
 }
 
-void IRPrinter::HandleOperands(const std::vector<Operand> &operands) {
+void CodeGenerator::HandleOperands(const std::vector<Operand> &operands) {
   for (auto &op : operands) {
     if (op.IsId()) {
       stream_ << ident_ << op.GetId();
@@ -424,9 +424,9 @@ void IRPrinter::HandleOperands(const std::vector<Operand> &operands) {
   stream_ << new_line_;
 }
 
-void IRPrinter::Dump() { std::cout << stream_.str(); }
+void CodeGenerator::Dump() { std::cout << stream_.str(); }
 
-void IRPrinter::AddMetaInfo() {
+void CodeGenerator::AddMetaInfo() {
   // TODO: I did not find any official specification of SPIR-V
   // text format. This meta is the same as SPIR-V tools generate.
   stream_ << "; SPIR-V" << new_line_;

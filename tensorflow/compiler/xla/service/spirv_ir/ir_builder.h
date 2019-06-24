@@ -127,10 +127,10 @@ class IRVisitor : public IRVisitorBase {
   virtual void HandleDecorate(Instruction *instruction) = 0;
 };
 
-class IRPrinter : public IRVisitor {
+class CodeGenerator : public IRVisitor {
  public:
-  IRPrinter();
-  ~IRPrinter() override;
+  CodeGenerator();
+  ~CodeGenerator() override;
 
   void Visit(Instruction *instruction) override;
   void HandleHeaderOp(Instruction *instruction) override;
