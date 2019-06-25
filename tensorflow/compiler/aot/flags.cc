@@ -46,6 +46,7 @@ void AppendMainFlags(std::vector<Flag>* flag_list, MainFlags* flags) {
       {"target_cpu", &flags->target_cpu,
        "Target cpu, similar to the clang -mcpu flag.  "
        "http://clang.llvm.org/docs/CrossCompilation.html#cpu-fpu-abi"},
+      {"target_gpu", &flags->target_gpu, "target gpu"},
       {"target_features", &flags->target_features,
        "Target features, e.g. +avx2, +neon, etc."},
       {"entry_point", &flags->entry_point,

@@ -137,6 +137,7 @@ ClientLibrary::~ClientLibrary() = default;
 
 /* static */ StatusOr<CompileOnlyClient*>
 ClientLibrary::GetOrCreateCompileOnlyClient(se::Platform* platform) {
+//  LOG(INFO) << "Create local client";
   ClientLibrary& client_library = Singleton();
   tensorflow::mutex_lock lock(client_library.service_mutex_);
 

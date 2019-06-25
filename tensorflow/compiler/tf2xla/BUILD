@@ -110,6 +110,8 @@ cc_library(
     visibility = [
         "//tensorflow/compiler/aot:__pkg__",
         "//tensorflow/compiler/xla/service/cpu:__pkg__",
+        "//tensorflow/compiler/xla/service/gpu:__pkg__",
+        "//tensorflow/compiler/xla/service:__pkg__",
     ],
     deps = [
         # Keep dependencies to a minimum here; this library is used in every AOT
