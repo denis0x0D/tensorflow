@@ -1,0 +1,6 @@
+[submodule "tensorflow/lite/examples/minimal/benchmark"]
+	path = tensorflow/lite/examples/minimal/benchmark
+	url = https://github.com/google/benchmark.git
+[submodule "tensorflow/lite/examples/minimal/googletest"]
+	path = tensorflow/lite/examples/minimal/googletest
+	url = https://github.com/google/googletest.git

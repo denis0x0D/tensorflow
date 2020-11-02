@@ -35,10 +35,27 @@ add_subdirectory(
   EXCLUDE_FROM_ALL
 )
 
+include(ExternalProject)
+externalproject_add(benchmark
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/benchmark
+    CONFIGURE_COMMAND ${CMAKE_COMMAND} -DGOOGLETEST_PATH=${PROJECT_SOURCE_DIR}/googletest -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR} -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} -DANDROID_ABI=arm64-v8a -DANDROID_NATIVE_API_LEVEL=29 ${PROJECT_SOURCE_DIR}/benchmark
+    BUILD_COMMAND ${CMAKE_COMMAND} --build . --target install
+    INSTALL_COMMAND "")
+
 add_executable(minimal
   minimal.cc
+  ${PROJECT_SOURCE_DIR}/../../profiling/atrace_profiler.cc
 )
+
+add_dependencies(minimal benchmark)
+
+add_library(benchmark_lib STATIC IMPORTED)
+set_property(TARGET benchmark_lib PROPERTY IMPORTED_LOCATION ${PROJECT_BINARY_DIR}/lib/libbenchmark.a)
+
+target_include_directories(minimal PUBLIC ${PROJECT_BINARY_DIR}/include)
+
 target_link_libraries(minimal
   tensorflow-lite
   ${CMAKE_DL_LIBS}
+  benchmark_lib
 )
