@@ -17,6 +17,7 @@ limitations under the License.
 #include "tensorflow/lite/kernels/register.h"
 #include "tensorflow/lite/model.h"
 #include "tensorflow/lite/optional_debug_tools.h"
+#include "tensorflow/lite/delegates/gpu/delegate.h"
 #include "benchmark/benchmark.h"
 
 // This is an example that is minimal to read a model
@@ -54,6 +55,11 @@ static void BM_SomeFunction(benchmark::State& state) {
   // Allocate tensor buffers.
   TFLITE_MINIMAL_CHECK(interpreter->AllocateTensors() == kTfLiteOk);
 
+  auto* delegate = TfLiteGpuDelegateV2Create(/*default options=*/nullptr);
+  interpreter->ModifyGraphWithDelegate(delegate);
+
+  // Run inference.
+
   // Fill input buffers
   // TODO(user): Insert code to fill input tensors
 
@@ -68,6 +74,6 @@ static void BM_SomeFunction(benchmark::State& state) {
   // be accessed with `T* output = interpreter->typed_output_tensor<T>(i);`
 }
 // Register the function as a benchmark
-BENCHMARK(BM_SomeFunction);
+BENCHMARK(BM_SomeFunction)->Unit(benchmark::kMillisecond);
 // Run the benchmark
 BENCHMARK_MAIN();

@@ -53,9 +53,17 @@ add_library(benchmark_lib STATIC IMPORTED)
 set_property(TARGET benchmark_lib PROPERTY IMPORTED_LOCATION ${PROJECT_BINARY_DIR}/lib/libbenchmark.a)
 
 target_include_directories(minimal PUBLIC ${PROJECT_BINARY_DIR}/include)
+#build this library by $bazel build -c opt --config android_arm64 tensorflow/lite/delegates/gpu:libtensorflowlite_gpu_delegate.so 
+#and put this library on Android
+set(CMAKE_CXX_FLAGS "-L/home/denis/tensorflow/bazel-out/arm64-v8a-opt/bin/tensorflow/lite/delegates/gpu")
 
 target_link_libraries(minimal
   tensorflow-lite
   ${CMAKE_DL_LIBS}
   benchmark_lib
+  tensorflowlite_gpu_delegate
+  EGL
+  GLESv3
+  GLESv2
+  log
 )
